@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Average Fantasy Scores</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-5">
+    <h1 class="mb-4">📊 Driver Averages — {{ year }} Season</h1>
+    <p class="text-muted">Based on {{ race_count }} valid race sessions</p>
+
+    <form method="get" action="/averages" class="mb-4">
+        <label for="year" class="form-label">Select Season:</label>
+        <select name="year" id="year" class="form-select w-auto d-inline" onchange="this.form.submit()">
+            {% for y in [2025, 2024, 2023, 2022, 2021] %}
+                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+    <a href="{{ url_for('home') }}" class="btn btn-outline-dark mb-3">⬅️ Back</a>
+    <div class="table-responsive">
+        {{ table|safe }}
+    </div>
+</body>
+</html>

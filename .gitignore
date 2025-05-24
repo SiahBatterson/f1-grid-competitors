@@ -1,0 +1,18 @@
+# Caches and large files
+f1_cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VSCode or JetBrains
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+# Virtual environments
+env/
+venv/
+.venv/
