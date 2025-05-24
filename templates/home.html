@@ -9,11 +9,26 @@
   </head>
   <body class="container mt-5">
     <h1 class="mb-4">F1 Fantasy Leaderboard</h1>
+
     <a href="{{ url_for('season') }}" class="btn btn-primary btn-lg"
       >🏁 View All Race Scores</a
     >
     <a href="{{ url_for('averages') }}" class="btn btn-secondary btn-lg ms-3"
       >📊 View Driver Averages</a
     >
+
+    <hr class="my-4" />
+
+    <form method="POST" action="{{ url_for('preload') }}">
+      <label for="year" class="form-label">Preload Season Data:</label>
+      <select name="year" id="year" class="form-select w-auto d-inline">
+        <option value="2021">2021</option>
+        <option value="2022">2022</option>
+        <option value="2023" selected>2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+      </select>
+      <button type="submit" class="btn btn-warning ms-2">⚡ Preload</button>
+    </form>
   </body>
 </html>

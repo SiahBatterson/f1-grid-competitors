@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from utils import calculate_points
 import fastf1
+import time
 
 fastf1.Cache.enable_cache("/mnt/f1_cache")
 app = Flask(__name__)
@@ -11,6 +12,35 @@ app = Flask(__name__)
 @app.route("/")
 def home():
     return render_template("home.html")
+
+@app.route("/preload", methods=["POST"])
+def preload():
+    year = int(request.form.get("year", 2023))
+    print(f"🔁 Manually triggered preload for {year}")
+
+    try:
+        schedule = fastf1.get_event_schedule(year)
+    except Exception as e:
+        return f"<h2>Failed to get schedule for {year}: {e}</h2>", 500
+
+    all_results = []
+    for _, row in schedule.iterrows():
+        df = calculate_points(year, row["EventName"])
+        if not df.empty:
+            all_results.append(df)
+        time.sleep(1)  # throttle
+
+    if all_results:
+        avg_cache_file = f"/mnt/f1_cache/averages_{year}.csv"
+        df = pd.concat(all_results)
+        drivers = df["Driver"].value_counts()
+        df = df[df["Driver"].isin(drivers[drivers >= 5].index)]
+        avg_df = df.groupby("Driver")[["Quali", "Race", "+Pos", "Total Points"]].mean().round(2).reset_index()
+        avg_df = avg_df.sort_values("Total Points", ascending=False)
+        avg_df.to_csv(avg_cache_file, index=False)
+        return f"<h2>✅ Preloaded and cached averages for {year}</h2><a href='/'>⬅ Back</a>"
+    else:
+        return f"<h2>⚠️ No valid data for {year}</h2><a href='/'>⬅ Back</a>"
 
 
 @app.route("/season")
@@ -56,6 +86,7 @@ def averages():
             df = calculate_points(year, row["EventName"])
             if not df.empty:
                 all_results.append(df)
+            time.sleep(1)
 
 
         if not all_results:
