@@ -30,6 +30,11 @@ def season():
     season_df = pd.concat(all_results)
     return render_template("season.html", table=season_df.to_html(classes="table table-bordered text-center", index=False))
 
+@app.route("/test_race")
+def test_race():
+    df = calculate_points(2023, "Australian Grand Prix")
+    return df.to_html() if not df.empty else "⚠️ No data"
+
 
 @app.route("/averages")
 def averages():
