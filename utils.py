@@ -12,7 +12,9 @@ def calculate_points(year, gp_name):
         quali = event.get_session('Qualifying')
         race = event.get_session('Race')
         quali.load(telemetry=False, weather=False, laps=False)
+        time.sleep(1)  # Throttle API usage
         race.load(telemetry=False, weather=False, laps=False)
+        time.sleep(1)
 
         q_results = quali.results
         r_results = race.results
@@ -50,12 +52,14 @@ def calculate_points(year, gp_name):
         return pd.DataFrame()
 
 def generate_driver_rating(driver_abbr):
+    output_path = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
     all_driver_races = []
     years = [2025, 2024, 2023, 2022, 2021]
 
     for year in years:
         try:
             schedule = fastf1.get_event_schedule(year)
+            time.sleep(1)
             for _, row in schedule.iterrows():
                 gp_name = row["EventName"]
                 df = calculate_points(year, gp_name)
@@ -72,6 +76,7 @@ def generate_driver_rating(driver_abbr):
 
     full_df = pd.concat(all_driver_races, ignore_index=True)
     full_df = full_df.sort_values(by=["Year", "Grand Prix"], ascending=[False, False])
+    full_df.to_csv(output_path, index=False)
 
     last_3 = full_df.head(3)
     last_race = last_3.iloc[0:1]  # keep as DataFrame
@@ -93,9 +98,6 @@ def generate_driver_rating(driver_abbr):
         "Total Points": round(full_df["Total Points"].mean(), 2)
     }])
 
-    output_path = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
-    full_df.to_csv(output_path, index=False)
-
     return last_race, last_3_avg_df, seasonal_avg_df
 
 def get_all_cached_drivers():
@@ -105,4 +107,22 @@ def get_all_cached_drivers():
         if os.path.exists(schedule_path):
             df = pd.read_csv(schedule_path)
             drivers.update(df["Driver"].dropna().unique())
+
+    # Also scan for driver rating files
+    for fname in os.listdir(CACHE_DIR):
+        if fname.startswith("Driver Rating - ") and fname.endswith(".csv"):
+            driver = fname.replace("Driver Rating - ", "").replace(".csv", "").strip()
+            if driver:
+                drivers.add(driver)
+
     return sorted(drivers)
+
+def generate_all_driver_ratings():
+    drivers = get_all_cached_drivers()
+    print(f"🔁 Generating full driver rating files for {len(drivers)} drivers...")
+    for driver in drivers:
+        try:
+            generate_driver_rating(driver)
+            print(f"✅ Cached {driver}")
+        except Exception as e:
+            print(f"❌ Failed to generate for {driver}: {e}")

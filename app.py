@@ -13,7 +13,9 @@ app = Flask(__name__)
 @app.route("/")
 def home():
     from utils import get_all_cached_drivers
+    from utils import generate_all_driver_ratings
     drivers = get_all_cached_drivers()
+    generate_all_driver_ratings()
     return render_template("home.html", drivers=drivers)
 
 from flask import request
