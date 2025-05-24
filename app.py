@@ -67,6 +67,7 @@ def weighted():
 
 @app.route("/generate_all_driver_ratings", methods=["POST"])
 def generate_all_driver_ratings_route():
+    print("🚀 POST /generate_all_driver_ratings triggered")
     generate_all_driver_ratings()
     drivers = get_all_cached_drivers()
     return render_template("home.html", drivers=drivers)
@@ -74,7 +75,6 @@ def generate_all_driver_ratings_route():
 
 @app.route("/generate_driver_rating", methods=["GET", "POST"])
 def generate_driver_rating_route():
-    print("🚀 POST /generate_all_driver_ratings triggered")
     if request.method == "POST":
         driver = request.form.get("driver", "").upper().strip()
         if not driver:
