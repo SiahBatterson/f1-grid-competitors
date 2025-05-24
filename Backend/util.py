@@ -1,6 +1,7 @@
 import fastf1
 import pandas as pd
 
+
 def calculate_points(year, gp_name):
     try:
         event = fastf1.get_event(year, gp_name)

@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 import pandas as pd
 import os
-from utils import calculate_points
+from .utils import calculate_points
 import fastf1
 
 fastf1.Cache.enable_cache("f1_cache")
