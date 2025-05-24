@@ -78,16 +78,24 @@ def generate_driver_rating(driver_abbr):
     recent_avg = combined["Total Points"].mean()
     last_race_points = combined.iloc[0]["Total Points"]
 
-    # Get seasonal average from available averages
-    seasonal_avg = None
+    # Calculate seasonal average manually
+    all_season_data = []
     for year in years:
-        avg_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
-        if os.path.exists(avg_path):
-            avg_df = pd.read_csv(avg_path)
-            match = avg_df[avg_df["Driver"] == driver_abbr]
-            if not match.empty:
-                seasonal_avg = match["Total Points"].values[0]
-                break
+        try:
+            schedule = fastf1.get_event_schedule(year)
+            for _, row in schedule.iterrows():
+                gp_name = row["EventName"]
+                df = calculate_points(year, gp_name)
+                if not df.empty and driver_abbr in df["Driver"].values:
+                    all_season_data.append(df[df["Driver"] == driver_abbr])
+        except:
+            continue
+
+    if all_season_data:
+        full_season_df = pd.concat(all_season_data)
+        seasonal_avg = full_season_df["Total Points"].mean()
+    else:
+        seasonal_avg = None
 
     summary = {
         "Driver": driver_abbr,
@@ -106,8 +114,8 @@ def generate_driver_rating(driver_abbr):
 def get_all_cached_drivers():
     drivers = set()
     for year in [2025, 2024, 2023, 2022, 2021]:
-        path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
-        if os.path.exists(path):
-            df = pd.read_csv(path)
+        schedule_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
+        if os.path.exists(schedule_path):
+            df = pd.read_csv(schedule_path)
             drivers.update(df["Driver"].dropna().unique())
     return sorted(drivers)
