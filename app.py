@@ -1,20 +1,24 @@
 from flask import Flask, render_template, request
 import pandas as pd
 import os
-from utils import calculate_points
-from utils import generate_driver_rating
 import fastf1
 import time
+
+from utils import (
+    calculate_points,
+    generate_driver_rating,
+    generate_all_driver_ratings,
+    get_all_cached_drivers
+)
 
 fastf1.Cache.enable_cache("/mnt/f1_cache")
 app = Flask(__name__)
 
 CACHE_DIR = "/mnt/f1_cache"
 
+
 @app.route("/")
 def home():
-    from utils import get_all_cached_drivers, generate_driver_rating
-
     drivers = get_all_cached_drivers()
     top_drivers = []
 
@@ -35,16 +39,13 @@ def home():
     return render_template("home.html", drivers=drivers, top_drivers=top_drivers)
 
 
-
-from flask import request
-
 @app.route("/clear_driver_ratings", methods=["POST"])
 def clear_driver_ratings():
     deleted = []
-    for file in os.listdir("/mnt/f1_cache"):
+    for file in os.listdir(CACHE_DIR):
         if file.startswith("Driver Rating -") and file.endswith(".csv"):
             try:
-                os.remove(os.path.join("/mnt/f1_cache", file))
+                os.remove(os.path.join(CACHE_DIR, file))
                 deleted.append(file)
             except Exception as e:
                 print(f"❌ Failed to delete {file}: {e}")
@@ -58,15 +59,14 @@ def weighted():
         return "<h2>⚠️ No weighted data found. Generate driver ratings first.</h2>"
 
     df = pd.read_csv(weighted_path)
-    df = df.rename(columns={"Weighted Avg": "Hype"})  # Rename column
-    df = df.sort_values(by="Hype", ascending=False)   # Sort by Hype descending
-
+    df = df.rename(columns={"Weighted Avg": "Hype"})
+    df = df.sort_values(by="Hype", ascending=False)
     table = df.to_html(classes="table table-hover table-striped text-center", index=False)
     return render_template("weighted.html", table=table)
 
+
 @app.route("/generate_all_driver_ratings", methods=["POST"])
 def generate_all_driver_ratings_route():
-    from utils import generate_all_driver_ratings, get_all_cached_drivers
     generate_all_driver_ratings()
     drivers = get_all_cached_drivers()
     return render_template("home.html", drivers=drivers)
@@ -80,14 +80,14 @@ def generate_driver_rating_route():
             return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
         try:
             df, _, _ = generate_driver_rating(driver)
-            return render_template("driver_rating.html", table=df.to_html(classes="table table-bordered text-center", index=False), driver=driver)
+            return render_template(
+                "driver_rating.html",
+                table=df.to_html(classes="table table-bordered text-center", index=False),
+                driver=driver
+            )
         except Exception as e:
             return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
     return "<h2>Use the form to POST a driver abbreviation.</h2>"
-
-
-
-
 
 
 @app.route("/preload", methods=["POST"])
@@ -105,10 +105,10 @@ def preload():
         df = calculate_points(year, row["EventName"])
         if not df.empty:
             all_results.append(df)
-        time.sleep(1)  # throttle
+        time.sleep(1)
 
     if all_results:
-        avg_cache_file = f"/mnt/f1_cache/averages_{year}.csv"
+        avg_cache_file = os.path.join(CACHE_DIR, f"averages_{year}.csv")
         df = pd.concat(all_results)
         drivers = df["Driver"].value_counts()
         df = df[df["Driver"].isin(drivers[drivers >= 5].index)]
@@ -137,6 +137,7 @@ def season():
     season_df = pd.concat(all_results)
     return render_template("season.html", table=season_df.to_html(classes="table table-bordered text-center", index=False))
 
+
 @app.route("/test_race")
 def test_race():
     df = calculate_points(2023, "Australian Grand Prix")
@@ -146,13 +147,12 @@ def test_race():
 @app.route("/averages")
 def averages():
     year = int(request.args.get("year", 2023))
-    cache_path = f"/mnt/f1_cache/averages_{year}.csv"
+    cache_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
 
     if os.path.exists(cache_path):
         avg_df = pd.read_csv(cache_path)
         print(f"✅ Loaded cached averages for {year}")
     else:
-        print(f"🧮 Calculating averages for {year}")
         try:
             schedule = fastf1.get_event_schedule(year)
         except Exception as e:
@@ -165,7 +165,6 @@ def averages():
                 all_results.append(df)
             time.sleep(1)
 
-
         if not all_results:
             return "<h2>No data to average.</h2>"
 
@@ -174,7 +173,6 @@ def averages():
         df = df[df["Driver"].isin(drivers[drivers >= 5].index)]
         avg_df = df.groupby("Driver")[["Quali", "Race", "+Pos", "Total Points"]].mean().round(2).reset_index()
         avg_df = avg_df.sort_values("Total Points", ascending=False)
-
         avg_df.to_csv(cache_path, index=False)
 
     html_table = avg_df.to_html(classes="table table-bordered text-center", index=False)
@@ -188,7 +186,7 @@ def delete_averages():
     if not year or not year.isdigit():
         return "⚠️ Please provide a valid year (e.g., /delete_averages?year=2023)", 400
 
-    cache_path = f"/mnt/f1_cache/averages_{year}.csv"
+    cache_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
 
     try:
         if os.path.exists(cache_path):
@@ -200,55 +198,5 @@ def delete_averages():
         return f"❌ Error deleting file: {e}", 500
 
 
-def preload_all_data(years=[2021, 2022, 2023, 2024, 2025]):
-    session_types = ['Qualifying', 'Race']
-    for year in years:
-        print(f"🔍 Checking cache for season {year}")
-        try:
-            schedule = fastf1.get_event_schedule(year)
-        except Exception as e:
-            print(f"❌ Failed to get schedule for {year}: {e}")
-            continue
-
-        for _, row in schedule.iterrows():
-            event_name = row["EventName"]
-            for session_type in session_types:
-                try:
-                    event = fastf1.get_event(year, event_name)
-                    session = event.get_session(session_type)
-
-                    print(f"⬇️ Loading {year} {event_name} {session_type}")
-                    session.load(telemetry=False, weather=False, laps=False)
-                    print(f"✅ Cached: {year} {event_name} {session_type}")
-
-                except Exception as e:
-                    print(f"⚠️ Skipped {year} {event_name} {session_type}: {e}")
-
-        # Cache averages if not already cached
-        avg_cache_file = f"/mnt/f1_cache/averages_{year}.csv"
-        if os.path.exists(avg_cache_file):
-            print(f"✅ Averages already cached for {year}")
-            continue
-
-        print(f"🧮 Generating averages for {year}")
-        all_results = []
-        for _, row in schedule.iterrows():
-            df = calculate_points(year, row["EventName"])
-            if not df.empty:
-                all_results.append(df)
-
-        if all_results:
-            df = pd.concat(all_results)
-            drivers = df["Driver"].value_counts()
-            df = df[df["Driver"].isin(drivers[drivers >= 5].index)]
-            avg_df = df.groupby("Driver")[["Quali", "Race", "+Pos", "Total Points"]].mean().round(2).reset_index()
-            avg_df = avg_df.sort_values("Total Points", ascending=False)
-            avg_df.to_csv(avg_cache_file, index=False)
-            print(f"📦 Averages saved to {avg_cache_file}")
-        else:
-            print(f"⚠️ No data to compute averages for {year}")
-
-
 if __name__ == "__main__":
-    #preload_all_data()  # 🧠 Preload everything on cold start
     app.run(host="0.0.0.0", port=5000)
