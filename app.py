@@ -102,7 +102,8 @@ def preload_all_data(years=[2021, 2022, 2023, 2024, 2025]):
                         continue
 
                     print(f"⬇️ Downloading: {year} {event_name} {session_type}")
-                    session.load()
+                    session.load(telemetry=False, weather=False, laps=False)
+
 
                 except Exception as e:
                     print(f"⚠️ Skipped {year} {event_name} {session_type}: {e}")
