@@ -72,7 +72,7 @@ def generate_driver_rating(driver_abbr):
             print(f"⚠️ Skipping {year}: {e}")
 
     if not recent_races:
-        return f"❌ No valid data for {driver_abbr}"
+        return pd.DataFrame([{"Error": f"❌ No valid data for {driver_abbr}"}])
 
     combined = pd.concat(recent_races)
     recent_avg = combined["Total Points"].mean()
@@ -108,8 +108,9 @@ def generate_driver_rating(driver_abbr):
         summary[f"{row['Season']} - {row['Grand Prix']}"] = row["Total Points"]
 
     output_path = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
-    pd.DataFrame([summary]).to_csv(output_path, index=False)
-    return pd.DataFrame([summary])
+    result_df = pd.DataFrame([summary])
+    result_df.to_csv(output_path, index=False)
+    return result_df
 
 def get_all_cached_drivers():
     drivers = set()
