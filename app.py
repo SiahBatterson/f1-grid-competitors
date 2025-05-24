@@ -2,6 +2,7 @@ from flask import Flask, render_template, request
 import pandas as pd
 import os
 from utils import calculate_points
+from utils import generate_driver_rating
 import fastf1
 import time
 
@@ -12,6 +13,23 @@ app = Flask(__name__)
 @app.route("/")
 def home():
     return render_template("home.html")
+
+from flask import request
+
+@app.route("/generate_driver_rating", methods=["POST"])
+def generate_driver_rating_route():
+    from utils_driver import generate_driver_rating  # adjust if path differs
+
+    driver = request.form.get("driver", "").upper().strip()
+    if not driver:
+        return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
+
+    try:
+        generate_driver_rating(driver)
+        return f"<h2>✅ Generated driver rating for {driver}.</h2><a href='/'>⬅ Back</a>"
+    except Exception as e:
+        return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
+
 
 @app.route("/preload", methods=["POST"])
 def preload():

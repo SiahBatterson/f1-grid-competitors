@@ -30,5 +30,22 @@
       </select>
       <button type="submit" class="btn btn-warning ms-2">⚡ Preload</button>
     </form>
+
+    <hr class="my-4" />
+
+    <form method="POST" action="{{ url_for('generate_driver_rating') }}">
+      <label for="driver" class="form-label"
+        >Generate Driver Rating (last 3 races):</label
+      >
+      <input
+        type="text"
+        name="driver"
+        id="driver"
+        placeholder="e.g. VER"
+        class="form-control w-auto d-inline"
+        required
+      />
+      <button type="submit" class="btn btn-success ms-2">📈 Generate</button>
+    </form>
   </body>
 </html>

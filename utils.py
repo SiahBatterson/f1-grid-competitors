@@ -1,5 +1,10 @@
 import fastf1
 import pandas as pd
+import os
+import time
+
+CACHE_DIR = "/mnt/f1_cache"
+fastf1.Cache.enable_cache(CACHE_DIR)
 
 def calculate_points(year, gp_name):
     try:
@@ -36,8 +41,51 @@ def calculate_points(year, gp_name):
             'total_points': 'Total Points'
         })
 
-        df['Q/R/+O'] = df.apply(lambda row: f"{row['points_from_quali']}/{row['points_from_race']}/{row['points_from_gain']}", axis=1)
+        df['Q/R/+O'] = df.apply(
+            lambda row: f"{row['points_from_quali']}/{row['points_from_race']}/{row['points_from_gain']}", axis=1
+        )
         return df[['Driver', 'Quali', 'Race', '+Pos', 'Q/R/+O', 'Total Points']]
     except Exception as e:
         print(f"⚠️ Error: {e}")
         return pd.DataFrame()
+
+def generate_driver_rating(driver_abbr):
+    recent_races = []
+    years = [2025, 2024, 2023, 2022, 2021]
+
+    for year in years:
+        try:
+            schedule = fastf1.get_event_schedule(year)
+            for _, row in reversed(schedule.iterrows()):  # iterate from latest to oldest
+                gp_name = row["EventName"]
+                df = calculate_points(year, gp_name)
+                if not df.empty and driver_abbr in df["Driver"].values:
+                    df = df[df["Driver"] == driver_abbr]
+                    df["Season"] = year
+                    df["Grand Prix"] = gp_name
+                    recent_races.append(df)
+                    if len(recent_races) == 3:
+                        break
+            if len(recent_races) == 3:
+                break
+        except Exception as e:
+            print(f"⚠️ Skipping {year}: {e}")
+
+    if not recent_races:
+        print(f"❌ No valid data for {driver_abbr}")
+        return
+
+    combined = pd.concat(recent_races)
+    recent_avg = combined["Total Points"].mean()
+
+    summary = {
+        "Driver": driver_abbr,
+        "Last 3 Race Avg": round(recent_avg, 2)
+    }
+
+    for _, row in combined.iterrows():
+        summary[f"{row['Season']} - {row['Grand Prix']}"] = row["Total Points"]
+
+    output_path = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
+    pd.DataFrame([summary]).to_csv(output_path, index=False)
+    print(f"✅ Driver rating saved to {output_path}")
