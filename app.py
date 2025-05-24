@@ -76,5 +76,62 @@ def delete_averages():
         return f"❌ Error deleting file: {e}", 500
 
 
+def preload_all_data(years=[2021, 2022, 2023, 2024, 2025]):
+    session_types = ['Qualifying', 'Race']
+    for year in years:
+        print(f"🔍 Checking cache for season {year}")
+        try:
+            schedule = fastf1.get_event_schedule(year)
+        except Exception as e:
+            print(f"❌ Failed to get schedule for {year}: {e}")
+            continue
+
+        for _, row in schedule.iterrows():
+            event_name = row["EventName"]
+            for session_type in session_types:
+                try:
+                    event = fastf1.get_event(year, event_name)
+                    session = event.get_session(session_type)
+
+                    # Cached session data is stored as pickle in /mnt/f1_cache
+                    session_key = session.api_path
+                    cache_path = fastf1.Cache.get_cache_path(session_key)
+
+                    if os.path.exists(cache_path):
+                        print(f"✅ Cached: {year} {event_name} {session_type}")
+                        continue
+
+                    print(f"⬇️ Downloading: {year} {event_name} {session_type}")
+                    session.load()
+
+                except Exception as e:
+                    print(f"⚠️ Skipped {year} {event_name} {session_type}: {e}")
+
+        # Check for averages CSV
+        avg_cache_file = f"/mnt/f1_cache/averages_{year}.csv"
+        if os.path.exists(avg_cache_file):
+            print(f"✅ Averages already cached for {year}")
+            continue
+
+        print(f"🧮 Generating averages for {year}")
+        all_results = []
+        for _, row in schedule.iterrows():
+            df = calculate_points(year, row["EventName"])
+            if not df.empty:
+                all_results.append(df)
+
+        if all_results:
+            df = pd.concat(all_results)
+            drivers = df["Driver"].value_counts()
+            df = df[df["Driver"].isin(drivers[drivers >= 5].index)]
+            avg_df = df.groupby("Driver")[["Quali", "Race", "+Pos", "Total Points"]].mean().round(2).reset_index()
+            avg_df = avg_df.sort_values("Total Points", ascending=False)
+            avg_df.to_csv(avg_cache_file, index=False)
+            print(f"📦 Averages saved to {avg_cache_file}")
+        else:
+            print(f"⚠️ No data to compute averages for {year}")
+
+
 if __name__ == "__main__":
+    preload_all_data()  # 🧠 Preload everything on cold start
     app.run(host="0.0.0.0", port=5000)
