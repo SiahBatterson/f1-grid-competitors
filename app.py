@@ -57,12 +57,15 @@ def generate_all_driver_ratings_route():
 
 @app.route("/weighted")
 def weighted():
-    path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
-    if not os.path.exists(path):
+    weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
+    if not os.path.exists(weighted_path):
         return "<h2>⚠️ No weighted data found. Generate driver ratings first.</h2>"
 
-    df = pd.read_csv(path)
-    table = df.to_html(classes="table table-bordered text-center", index=False)
+    df = pd.read_csv(weighted_path)
+    df = df.rename(columns={"Weighted Avg": "Hype"})  # Rename column
+    df = df.sort_values(by="Hype", ascending=False)   # Sort by Hype descending
+
+    table = df.to_html(classes="table table-hover table-striped text-center", index=False)
     return render_template("weighted.html", table=table)
 
 

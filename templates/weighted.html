@@ -8,7 +8,8 @@
     />
     <style>
       body {
-        background-color: #f8f9fa;
+        background-color: #f4f6f8;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
       }
       .hype-header {
         text-align: center;
@@ -17,12 +18,21 @@
       .hype-header h1 {
         font-size: 2.5rem;
         font-weight: bold;
+        color: #212529;
+      }
+      .hype-header p {
+        color: #6c757d;
       }
       .table-container {
         background: white;
-        border-radius: 8px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        overflow-x: auto;
+      }
+      .table thead {
+        background-color: #343a40;
+        color: white;
       }
       .btn-back {
         display: block;
@@ -34,7 +44,7 @@
     <div class="hype-header">
       <h1>🔥 Driver Hype Ratings</h1>
       <p class="text-muted">
-        A blend of season, recent form, and latest race performance.
+        A blend of season average, recent 3-race form, and last race magic.
       </p>
     </div>
 
