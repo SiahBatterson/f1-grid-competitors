@@ -33,17 +33,21 @@ def clear_driver_ratings():
 
 @app.route("/generate_driver_rating", methods=["POST"])
 def generate_driver_rating_route():
-    from utils import generate_driver_rating  # or your filename
     driver = request.form.get("driver", "").upper().strip()
-
     if not driver:
         return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
 
     try:
-        df = generate_driver_rating(driver)
-        return df.to_html(classes="table table-bordered text-center", index=False)
+        last_race, last_3_avg_df, seasonal_avg_df = generate_driver_rating(driver)
+        return render_template(
+            "driver_rating.html",
+            last_race=last_race.to_html(classes="table table-bordered text-center", index=False),
+            last_3_avg=last_3_avg_df.to_html(classes="table table-bordered text-center", index=False),
+            season_avg=seasonal_avg_df.to_html(classes="table table-bordered text-center", index=False)
+        )
     except Exception as e:
         return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
+
 
 
 
