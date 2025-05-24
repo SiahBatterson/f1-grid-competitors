@@ -7,12 +7,16 @@ CACHE_DIR = "/mnt/f1_cache"
 fastf1.Cache.enable_cache(CACHE_DIR)
 
 def calculate_points(year, gp_name):
+    cache_path = os.path.join(CACHE_DIR, f"{year} - {gp_name}.csv")
+    if os.path.exists(cache_path):
+        return pd.read_csv(cache_path)
+
     try:
         event = fastf1.get_event(year, gp_name)
         quali = event.get_session('Qualifying')
         race = event.get_session('Race')
         quali.load(telemetry=False, weather=False, laps=False, messages=False)
-        time.sleep(1)  # Throttle API usage
+        time.sleep(1)
         race.load(telemetry=False, weather=False, laps=False, messages=False)
         time.sleep(1)
 
@@ -46,6 +50,8 @@ def calculate_points(year, gp_name):
         df['Q/R/+O'] = df.apply(
             lambda row: f"{row['points_from_quali']}/{row['points_from_race']}/{row['points_from_gain']}", axis=1
         )
+
+        df.to_csv(cache_path, index=False)
         return df[['Driver', 'Quali', 'Race', '+Pos', 'Q/R/+O', 'Total Points']]
     except Exception as e:
         print(f"⚠️ Error: {e}")
@@ -53,8 +59,6 @@ def calculate_points(year, gp_name):
 
 def generate_driver_rating(driver_abbr):
     output_path = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
-
-    # ✅ Use existing file if it exists
     if os.path.exists(output_path):
         print(f"📂 Using cached driver rating for {driver_abbr}")
         return pd.read_csv(output_path)
@@ -85,7 +89,7 @@ def generate_driver_rating(driver_abbr):
     full_df = full_df.sort_values(by=["Year", "Grand Prix"], ascending=[False, False])
 
     last_3 = full_df.head(3)
-    last_3_avg = pd.DataFrame([{  # include last 3 avg as a row
+    last_3_avg = pd.DataFrame([{
         "Driver": driver_abbr,
         "Scope": "Last 3 Races Avg",
         "Quali": round(last_3["Quali"].mean(), 2),
@@ -97,7 +101,7 @@ def generate_driver_rating(driver_abbr):
         "Grand Prix": None
     }])
 
-    seasonal_avg = pd.DataFrame([{  # include seasonal avg as a row
+    seasonal_avg = pd.DataFrame([{
         "Driver": driver_abbr,
         "Scope": "Seasonal Average",
         "Quali": round(full_df["Quali"].mean(), 2),
@@ -153,9 +157,19 @@ def get_all_cached_drivers():
 def generate_all_driver_ratings():
     drivers = get_all_cached_drivers()
     print(f"🔁 Generating full driver rating files for {len(drivers)} drivers...")
-    for driver in drivers:
+
+    for year in [2025, 2024, 2023, 2022, 2021]:
         try:
-            generate_driver_rating(driver)
-            print(f"✅ Cached {driver}")
+            schedule = fastf1.get_event_schedule(year)
+            for _, row in schedule.iterrows():
+                gp_name = row["EventName"]
+                df = calculate_points(year, gp_name)
+                if not df.empty:
+                    for driver in df["Driver"].unique():
+                        try:
+                            generate_driver_rating(driver)
+                            print(f"✅ Cached {driver}")
+                        except Exception as e:
+                            print(f"❌ Failed to generate for {driver}: {e}")
         except Exception as e:
-            print(f"❌ Failed to generate for {driver}: {e}")
+            print(f"⚠️ Skipping schedule for {year}: {e}")
