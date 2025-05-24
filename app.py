@@ -51,7 +51,12 @@ def averages():
         except Exception as e:
             return f"<h2>Failed to load schedule for {year}: {e}</h2>", 500
 
-        all_results = [calculate_points(year, row["EventName"]) for _, row in schedule.iterrows() if not calculate_points(year, row["EventName"]).empty]
+        all_results = []
+        for _, row in schedule.iterrows():
+            df = calculate_points(year, row["EventName"])
+            if not df.empty:
+                all_results.append(df)
+
 
         if not all_results:
             return "<h2>No data to average.</h2>"
