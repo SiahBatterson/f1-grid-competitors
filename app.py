@@ -64,6 +64,13 @@ def weighted():
     table = df.to_html(classes="table table-hover table-striped text-center", index=False)
     return render_template("weighted.html", table=table)
 
+@app.route("/generate_all_driver_ratings", methods=["POST"])
+def generate_all_driver_ratings_route():
+    from utils import generate_all_driver_ratings, get_all_cached_drivers
+    generate_all_driver_ratings()
+    drivers = get_all_cached_drivers()
+    return render_template("home.html", drivers=drivers)
+
 
 @app.route("/generate_driver_rating", methods=["GET", "POST"])
 def generate_driver_rating_route():
