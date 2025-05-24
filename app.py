@@ -15,7 +15,6 @@ def home():
     from utils import get_all_cached_drivers
     from utils import generate_all_driver_ratings
     drivers = get_all_cached_drivers()
-    generate_all_driver_ratings()
     return render_template("home.html", drivers=drivers)
 
 from flask import request
@@ -32,23 +31,27 @@ def clear_driver_ratings():
                 print(f"❌ Failed to delete {file}: {e}")
     return f"<h2>🧹 Cleared {len(deleted)} driver rating files.</h2><a href='/'>⬅ Back</a>"
 
+@app.route("/generate_all_driver_ratings", methods=["POST"])
+def generate_all_driver_ratings_route():
+    from utils import generate_all_driver_ratings, get_all_cached_drivers
+    generate_all_driver_ratings()
+    drivers = get_all_cached_drivers()
+    return render_template("home.html", drivers=drivers)
+
 
 @app.route("/generate_driver_rating", methods=["POST"])
 def generate_driver_rating_route():
     driver = request.form.get("driver", "").upper().strip()
+
     if not driver:
         return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
 
     try:
-        last_race, last_3_avg_df, seasonal_avg_df = generate_driver_rating(driver)
-        return render_template(
-            "driver_rating.html",
-            last_race=last_race.to_html(classes="table table-bordered text-center", index=False),
-            last_3_avg=last_3_avg_df.to_html(classes="table table-bordered text-center", index=False),
-            season_avg=seasonal_avg_df.to_html(classes="table table-bordered text-center", index=False)
-        )
+        df = generate_driver_rating(driver)
+        return render_template("driver_rating.html", table=df.to_html(classes="table table-bordered text-center", index=False), driver=driver)
     except Exception as e:
         return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
+
 
 
 
