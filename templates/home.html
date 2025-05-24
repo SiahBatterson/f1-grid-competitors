@@ -50,5 +50,13 @@
 
       <button type="submit" class="btn btn-success ms-2">📈 Generate</button>
     </form>
+
+    <hr class="my-4" />
+
+    <form method="POST" action="{{ url_for('clear_driver_ratings') }}">
+      <button type="submit" class="btn btn-danger">
+        🗑️ Clear All Driver Ratings
+      </button>
+    </form>
   </body>
 </html>

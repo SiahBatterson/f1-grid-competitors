@@ -18,6 +18,19 @@ def home():
 
 from flask import request
 
+@app.route("/clear_driver_ratings", methods=["POST"])
+def clear_driver_ratings():
+    deleted = []
+    for file in os.listdir("/mnt/f1_cache"):
+        if file.startswith("Driver Rating -") and file.endswith(".csv"):
+            try:
+                os.remove(os.path.join("/mnt/f1_cache", file))
+                deleted.append(file)
+            except Exception as e:
+                print(f"❌ Failed to delete {file}: {e}")
+    return f"<h2>🧹 Cleared {len(deleted)} driver rating files.</h2><a href='/'>⬅ Back</a>"
+
+
 @app.route("/generate_driver_rating", methods=["POST"])
 def generate_driver_rating_route():
     from utils import generate_driver_rating  # or your filename
