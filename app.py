@@ -74,6 +74,7 @@ def generate_all_driver_ratings_route():
 
 @app.route("/generate_driver_rating", methods=["GET", "POST"])
 def generate_driver_rating_route():
+    print("🚀 POST /generate_all_driver_ratings triggered")
     if request.method == "POST":
         driver = request.form.get("driver", "").upper().strip()
         if not driver:
