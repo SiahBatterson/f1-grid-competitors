@@ -53,6 +53,13 @@ def calculate_points(year, gp_name):
 
 def generate_driver_rating(driver_abbr):
     output_path = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
+
+    # ✅ Use existing file if it exists
+    if os.path.exists(output_path):
+        print(f"📂 Using cached driver rating for {driver_abbr}")
+        return pd.read_csv(output_path)
+
+    print(f"🧮 Generating fresh driver rating for {driver_abbr}")
     all_driver_races = []
     years = [2025, 2024, 2023, 2022, 2021]
 
@@ -102,7 +109,6 @@ def generate_driver_rating(driver_abbr):
         "Grand Prix": None
     }])
 
-    # Weighted Average: 60% seasonal, 20% last 3, 20% last race
     last_race = full_df.head(1)
     if not last_race.empty:
         weighted_total = round(
@@ -136,7 +142,6 @@ def get_all_cached_drivers():
             df = pd.read_csv(schedule_path)
             drivers.update(df["Driver"].dropna().unique())
 
-    # Also scan for driver rating files
     for fname in os.listdir(CACHE_DIR):
         if fname.startswith("Driver Rating - ") and fname.endswith(".csv"):
             driver = fname.replace("Driver Rating - ", "").replace(".csv", "").strip()
