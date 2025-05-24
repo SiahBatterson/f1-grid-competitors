@@ -174,3 +174,11 @@ def generate_all_driver_ratings():
                             print(f"❌ Failed to generate for {driver}: {e}")
         except Exception as e:
             print(f"⚠️ Skipping schedule for {year}: {e}")
+
+    # ✅ Final re-sort and save to fix visibility bugs
+    weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
+    if os.path.exists(weighted_path):
+        df = pd.read_csv(weighted_path)
+        df = df.sort_values(by="Weighted Avg", ascending=False)
+        df.to_csv(weighted_path, index=False)
+
