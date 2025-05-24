@@ -20,18 +20,20 @@ def home():
 
     for d in drivers:
         try:
-            df = generate_driver_rating(d)
+            df, hype, value = generate_driver_rating(d)
             last_3_avg = df[df["Scope"] == "Last 3 Races Avg"]
             if not last_3_avg.empty:
                 top_drivers.append({
                     "driver": d,
-                    "points": last_3_avg["Total Points"].values[0]
+                    "points": last_3_avg["Total Points"].values[0],
+                    "value": f"${value:,.0f}" if value else "N/A"
                 })
         except Exception:
             continue
 
     top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
     return render_template("home.html", drivers=drivers, top_drivers=top_drivers)
+
 
 
 from flask import request
@@ -48,12 +50,19 @@ def clear_driver_ratings():
                 print(f"❌ Failed to delete {file}: {e}")
     return f"<h2>🧹 Cleared {len(deleted)} driver rating files.</h2><a href='/'>⬅ Back</a>"
 
-@app.route("/generate_all_driver_ratings", methods=["POST"])
-def generate_all_driver_ratings_route():
-    from utils import generate_all_driver_ratings, get_all_cached_drivers
-    generate_all_driver_ratings()
-    drivers = get_all_cached_drivers()
-    return render_template("home.html", drivers=drivers)
+@app.route("/generate_driver_rating", methods=["POST"])
+def generate_driver_rating_route():
+    driver = request.form.get("driver", "").upper().strip()
+
+    if not driver:
+        return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
+
+    try:
+        df, _, _ = generate_driver_rating(driver)
+        return render_template("driver_rating.html", table=df.to_html(classes="table table-bordered text-center", index=False), driver=driver)
+    except Exception as e:
+        return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
+
 
 @app.route("/weighted")
 def weighted():

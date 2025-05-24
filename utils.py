@@ -137,7 +137,15 @@ def generate_driver_rating(driver_abbr):
 
     full_out = pd.concat([seasonal_avg, last_3, last_3_avg], ignore_index=True)
     full_out.to_csv(output_path, index=False)
-    return full_out
+
+    # Compute fantasy value
+    fantasy_value = None
+    if not last_race.empty:
+        hype = weighted_total
+        avg = seasonal_avg["Total Points"].values[0]
+        fantasy_value = round(((avg * 0.9) + (hype * 0.1)) * 250000, 2)
+
+    return full_out, weighted_total if not last_race.empty else None, fantasy_value
 
 def get_all_cached_drivers():
     drivers = set()
