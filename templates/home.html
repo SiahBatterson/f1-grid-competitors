@@ -11,15 +11,24 @@
         background-color: #f8f9fa;
       }
       .section {
-        background-color: #fff;
-        border-radius: 8px;
+        background-color: #ffffff;
+        border-radius: 10px;
         padding: 2rem;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
         margin-bottom: 2rem;
       }
       .section h2 {
         font-size: 1.5rem;
         margin-bottom: 1rem;
+        font-weight: 600;
+      }
+      .card-title {
+        font-size: 1.25rem;
+        font-weight: bold;
+      }
+      .card-text {
+        font-size: 1.25rem;
+        color: #198754;
       }
       .form-inline .form-select,
       .form-inline .btn {
@@ -33,6 +42,24 @@
       <h1 class="display-4 fw-bold">🏎️ F1 Fantasy Leaderboard</h1>
       <p class="text-muted">Track performance across the season with real stats and custom scoring.</p>
     </div>
+
+    {% if top_drivers %}
+    <div class="section text-center bg-light border border-dark">
+      <h2 class="fw-bold mb-4">🔥 Top 3 Drivers (Last 3-Race Avg)</h2>
+      <div class="row justify-content-center">
+        {% for d in top_drivers %}
+        <div class="col-md-4">
+          <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">{{ d.driver }}</h5>
+              <p class="card-text">{{ d.points }} pts</p>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
     <div class="section text-center">
       <a href="{{ url_for('season') }}" class="btn btn-primary btn-lg me-2">🏁 All Race Scores</a>

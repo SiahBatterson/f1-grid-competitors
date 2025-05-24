@@ -13,10 +13,26 @@ CACHE_DIR = "/mnt/f1_cache"
 
 @app.route("/")
 def home():
-    from utils import get_all_cached_drivers
-    from utils import generate_all_driver_ratings
+    from utils import get_all_cached_drivers, generate_driver_rating
+
     drivers = get_all_cached_drivers()
-    return render_template("home.html", drivers=drivers)
+    top_drivers = []
+
+    for d in drivers:
+        try:
+            df = generate_driver_rating(d)
+            last_3_avg = df[df["Scope"] == "Last 3 Races Avg"]
+            if not last_3_avg.empty:
+                top_drivers.append({
+                    "driver": d,
+                    "points": last_3_avg["Total Points"].values[0]
+                })
+        except Exception:
+            continue
+
+    top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
+    return render_template("home.html", drivers=drivers, top_drivers=top_drivers)
+
 
 from flask import request
 
