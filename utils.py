@@ -1,14 +1,13 @@
 import fastf1
 import pandas as pd
 
-
 def calculate_points(year, gp_name):
     try:
         event = fastf1.get_event(year, gp_name)
         quali = event.get_session('Qualifying')
         race = event.get_session('Race')
-        quali.load()
-        race.load()
+        quali.load(telemetry=False, weather=False, laps=False)
+        race.load(telemetry=False, weather=False, laps=False)
 
         q_results = quali.results
         r_results = race.results
