@@ -76,29 +76,35 @@ def generate_driver_rating(driver_abbr):
 
     full_df = pd.concat(all_driver_races, ignore_index=True)
     full_df = full_df.sort_values(by=["Year", "Grand Prix"], ascending=[False, False])
-    full_df.to_csv(output_path, index=False)
 
     last_3 = full_df.head(3)
-    last_race = last_3.iloc[0:1]  # keep as DataFrame
-    last_3_avg_df = pd.DataFrame([{  # convert to DataFrame for display
+    last_3_avg = pd.DataFrame([{  # include last 3 avg as a row
         "Driver": driver_abbr,
         "Scope": "Last 3 Races Avg",
         "Quali": round(last_3["Quali"].mean(), 2),
         "Race": round(last_3["Race"].mean(), 2),
         "+Pos": round(last_3["+Pos"].mean(), 2),
-        "Total Points": round(last_3["Total Points"].mean(), 2)
+        "Q/R/+O": None,
+        "Total Points": round(last_3["Total Points"].mean(), 2),
+        "Year": None,
+        "Grand Prix": None
     }])
 
-    seasonal_avg_df = pd.DataFrame([{  # convert to DataFrame for display
+    seasonal_avg = pd.DataFrame([{  # include seasonal avg as a row
         "Driver": driver_abbr,
         "Scope": "Seasonal Average",
         "Quali": round(full_df["Quali"].mean(), 2),
         "Race": round(full_df["Race"].mean(), 2),
         "+Pos": round(full_df["+Pos"].mean(), 2),
-        "Total Points": round(full_df["Total Points"].mean(), 2)
+        "Q/R/+O": None,
+        "Total Points": round(full_df["Total Points"].mean(), 2),
+        "Year": None,
+        "Grand Prix": None
     }])
 
-    return last_race, last_3_avg_df, seasonal_avg_df
+    full_out = pd.concat([seasonal_avg, last_3, last_3_avg], ignore_index=True)
+    full_out.to_csv(output_path, index=False)
+    return full_out
 
 def get_all_cached_drivers():
     drivers = set()
