@@ -65,7 +65,7 @@ def weighted():
     return render_template("weighted.html", table=table)
 
 @app.route("/generate_all_driver_ratings", methods=["POST"])
-def generate_all_driver_ratings_route():
+def generate_all_driver_ratings():
     from utils import generate_all_driver_ratings, get_all_cached_drivers
     generate_all_driver_ratings()
     drivers = get_all_cached_drivers()
