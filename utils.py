@@ -132,6 +132,7 @@ def generate_driver_rating(driver_abbr):
             updated = pd.concat([existing, weighted_row], ignore_index=True)
         else:
             updated = weighted_row
+        updated = updated.sort_values(by="Weighted Avg", ascending=False)
         updated.to_csv(weighted_path, index=False)
 
     full_out = pd.concat([seasonal_avg, last_3, last_3_avg], ignore_index=True)
