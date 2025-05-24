@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: f1-fantasy-backend
+    name: f1-fantasy-app
     env: python
     buildCommand: pip install -r Backend/requirements.txt
-    startCommand: python Backend/app.py
+    startCommand: PYTHONPATH=Backend python Backend/app.py
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"
