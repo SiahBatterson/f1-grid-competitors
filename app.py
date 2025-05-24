@@ -5,7 +5,7 @@ from utils import calculate_points
 import fastf1
 
 fastf1.Cache.enable_cache("/mnt/f1_cache")
-app = Flask(__name__, template_folder="../templates", static_folder="../static")
+app = Flask(__name__)
 
 @app.route("/")
 def home():
