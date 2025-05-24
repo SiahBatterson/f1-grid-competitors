@@ -50,36 +50,9 @@ def calculate_points(year, gp_name):
         return pd.DataFrame()
 
 def generate_driver_rating(driver_abbr):
-    recent_races = []
+    all_driver_races = []
     years = [2025, 2024, 2023, 2022, 2021]
 
-    for year in years:
-        try:
-            schedule = fastf1.get_event_schedule(year)
-            for _, row in reversed(schedule.iterrows()):
-                gp_name = row["EventName"]
-                df = calculate_points(year, gp_name)
-                if not df.empty and driver_abbr in df["Driver"].values:
-                    df = df[df["Driver"] == driver_abbr]
-                    df["Season"] = year
-                    df["Grand Prix"] = gp_name
-                    recent_races.append(df)
-                    if len(recent_races) == 3:
-                        break
-            if len(recent_races) == 3:
-                break
-        except Exception as e:
-            print(f"⚠️ Skipping {year}: {e}")
-
-    if not recent_races:
-        return pd.DataFrame([{"Error": f"❌ No valid data for {driver_abbr}"}])
-
-    combined = pd.concat(recent_races)
-    recent_avg = combined["Total Points"].mean()
-    last_race_points = combined.iloc[0]["Total Points"]
-
-    # Calculate seasonal average manually
-    all_season_data = []
     for year in years:
         try:
             schedule = fastf1.get_event_schedule(year)
@@ -87,30 +60,37 @@ def generate_driver_rating(driver_abbr):
                 gp_name = row["EventName"]
                 df = calculate_points(year, gp_name)
                 if not df.empty and driver_abbr in df["Driver"].values:
-                    all_season_data.append(df[df["Driver"] == driver_abbr])
-        except:
-            continue
+                    row_df = df[df["Driver"] == driver_abbr].copy()
+                    row_df["Year"] = year
+                    row_df["Grand Prix"] = gp_name
+                    all_driver_races.append(row_df)
+        except Exception as e:
+            print(f"⚠️ Skipping {year}: {e}")
 
-    if all_season_data:
-        full_season_df = pd.concat(all_season_data)
-        seasonal_avg = full_season_df["Total Points"].mean()
-    else:
-        seasonal_avg = None
+    if not all_driver_races:
+        return pd.DataFrame([{"Error": f"❌ No valid data for {driver_abbr}"}])
 
-    summary = {
+    full_df = pd.concat(all_driver_races, ignore_index=True)
+    full_df = full_df.sort_values(by=["Year", "Grand Prix"], ascending=[False, False])
+
+    last_3 = full_df.head(3)
+    last_race = last_3.iloc[0]
+    last_3_avg = last_3["Total Points"].mean()
+    seasonal_avg = full_df["Total Points"].mean()
+
+    summary_row = pd.DataFrame([{
         "Driver": driver_abbr,
-        "Seasonal Average": round(seasonal_avg, 2) if seasonal_avg else "N/A",
-        "Last 3 Race Avg": round(recent_avg, 2),
-        "Last Race Points": round(last_race_points, 2)
-    }
+        "Seasonal Average": round(seasonal_avg, 2),
+        "Last 3 Race Avg": round(last_3_avg, 2),
+        "Last Race Points": round(last_race["Total Points"], 2),
+        "Last Race GP": last_race["Grand Prix"]
+    }])
 
-    for _, row in combined.iterrows():
-        summary[f"{row['Season']} - {row['Grand Prix']}"] = row["Total Points"]
-
+    combined = pd.concat([summary_row, full_df])
     output_path = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
-    result_df = pd.DataFrame([summary])
-    result_df.to_csv(output_path, index=False)
-    return result_df
+    combined.to_csv(output_path, index=False)
+
+    return combined
 
 def get_all_cached_drivers():
     drivers = set()
