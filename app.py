@@ -9,6 +9,7 @@ import time
 fastf1.Cache.enable_cache("/mnt/f1_cache")
 app = Flask(__name__)
 
+CACHE_DIR = "/mnt/f1_cache"
 
 @app.route("/")
 def home():
