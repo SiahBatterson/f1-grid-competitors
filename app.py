@@ -50,19 +50,6 @@ def clear_driver_ratings():
                 print(f"❌ Failed to delete {file}: {e}")
     return f"<h2>🧹 Cleared {len(deleted)} driver rating files.</h2><a href='/'>⬅ Back</a>"
 
-@app.route("/generate_driver_rating", methods=["POST"])
-def generate_driver_rating_route():
-    driver = request.form.get("driver", "").upper().strip()
-
-    if not driver:
-        return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
-
-    try:
-        df, _, _ = generate_driver_rating(driver)
-        return render_template("driver_rating.html", table=df.to_html(classes="table table-bordered text-center", index=False), driver=driver)
-    except Exception as e:
-        return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
-
 
 @app.route("/weighted")
 def weighted():
@@ -78,18 +65,19 @@ def weighted():
     return render_template("weighted.html", table=table)
 
 
-@app.route("/generate_driver_rating", methods=["POST"])
+@app.route("/generate_driver_rating", methods=["GET", "POST"])
 def generate_driver_rating_route():
-    driver = request.form.get("driver", "").upper().strip()
+    if request.method == "POST":
+        driver = request.form.get("driver", "").upper().strip()
+        if not driver:
+            return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
+        try:
+            df, _, _ = generate_driver_rating(driver)
+            return render_template("driver_rating.html", table=df.to_html(classes="table table-bordered text-center", index=False), driver=driver)
+        except Exception as e:
+            return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
+    return "<h2>Use the form to POST a driver abbreviation.</h2>"
 
-    if not driver:
-        return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
-
-    try:
-        df = generate_driver_rating(driver)
-        return render_template("driver_rating.html", table=df.to_html(classes="table table-bordered text-center", index=False), driver=driver)
-    except Exception as e:
-        return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
 
 
 
