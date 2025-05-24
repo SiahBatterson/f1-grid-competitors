@@ -38,6 +38,16 @@ def generate_all_driver_ratings_route():
     drivers = get_all_cached_drivers()
     return render_template("home.html", drivers=drivers)
 
+@app.route("/weighted")
+def weighted():
+    path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
+    if not os.path.exists(path):
+        return "<h2>⚠️ No weighted data found. Generate driver ratings first.</h2>"
+
+    df = pd.read_csv(path)
+    table = df.to_html(classes="table table-bordered text-center", index=False)
+    return render_template("weighted.html", table=table)
+
 
 @app.route("/generate_driver_rating", methods=["POST"])
 def generate_driver_rating_route():

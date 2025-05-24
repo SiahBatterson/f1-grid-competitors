@@ -11,9 +11,9 @@ def calculate_points(year, gp_name):
         event = fastf1.get_event(year, gp_name)
         quali = event.get_session('Qualifying')
         race = event.get_session('Race')
-        quali.load(telemetry=False, weather=False, laps=False)
+        quali.load(telemetry=False, weather=False, laps=False, messages=False)
         time.sleep(1)  # Throttle API usage
-        race.load(telemetry=False, weather=False, laps=False)
+        race.load(telemetry=False, weather=False, laps=False, messages=False)
         time.sleep(1)
 
         q_results = quali.results
@@ -101,6 +101,28 @@ def generate_driver_rating(driver_abbr):
         "Year": None,
         "Grand Prix": None
     }])
+
+    # Weighted Average: 60% seasonal, 20% last 3, 20% last race
+    last_race = full_df.head(1)
+    if not last_race.empty:
+        weighted_total = round(
+            (seasonal_avg["Total Points"].values[0] * 0.6) +
+            (last_3_avg["Total Points"].values[0] * 0.2) +
+            (last_race["Total Points"].values[0] * 0.2), 2
+        )
+        weighted_row = pd.DataFrame([{
+            "Driver": driver_abbr,
+            "Weighted Avg": weighted_total
+        }])
+
+        weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
+        if os.path.exists(weighted_path):
+            existing = pd.read_csv(weighted_path)
+            existing = existing[existing["Driver"] != driver_abbr]
+            updated = pd.concat([existing, weighted_row], ignore_index=True)
+        else:
+            updated = weighted_row
+        updated.to_csv(weighted_path, index=False)
 
     full_out = pd.concat([seasonal_avg, last_3, last_3_avg], ignore_index=True)
     full_out.to_csv(output_path, index=False)
