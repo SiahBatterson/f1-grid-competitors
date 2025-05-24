@@ -18,7 +18,7 @@ from flask import request
 
 @app.route("/generate_driver_rating", methods=["POST"])
 def generate_driver_rating_route():
-    from utils_driver import generate_driver_rating  # adjust if path differs
+    from utils import generate_driver_rating  # adjust if path differs
 
     driver = request.form.get("driver", "").upper().strip()
     if not driver:
