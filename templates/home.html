@@ -37,14 +37,17 @@
       <label for="driver" class="form-label"
         >Generate Driver Rating (last 3 races):</label
       >
-      <input
-        type="text"
+      <select
         name="driver"
         id="driver"
-        placeholder="e.g. VER"
-        class="form-control w-auto d-inline"
+        class="form-select w-auto d-inline"
         required
-      />
+      >
+        {% for d in drivers %}
+        <option value="{{ d }}">{{ d }}</option>
+        {% endfor %}
+      </select>
+
       <button type="submit" class="btn btn-success ms-2">📈 Generate</button>
     </form>
   </body>

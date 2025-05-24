@@ -12,23 +12,26 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return render_template("home.html")
+    from utils_driver import get_all_cached_drivers
+    drivers = get_all_cached_drivers()
+    return render_template("home.html", drivers=drivers)
 
 from flask import request
 
 @app.route("/generate_driver_rating", methods=["POST"])
 def generate_driver_rating_route():
-    from utils import generate_driver_rating  # adjust if path differs
-
+    from utils import generate_driver_rating  # or your filename
     driver = request.form.get("driver", "").upper().strip()
+
     if not driver:
         return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
 
     try:
-        generate_driver_rating(driver)
-        return f"<h2>✅ Generated driver rating for {driver}.</h2><a href='/'>⬅ Back</a>"
+        df = generate_driver_rating(driver)
+        return df.to_html(classes="table table-bordered text-center", index=False)
     except Exception as e:
         return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
+
 
 
 @app.route("/preload", methods=["POST"])

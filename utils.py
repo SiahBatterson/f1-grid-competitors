@@ -56,7 +56,7 @@ def generate_driver_rating(driver_abbr):
     for year in years:
         try:
             schedule = fastf1.get_event_schedule(year)
-            for _, row in reversed(schedule.iterrows()):  # iterate from latest to oldest
+            for _, row in reversed(schedule.iterrows()):
                 gp_name = row["EventName"]
                 df = calculate_points(year, gp_name)
                 if not df.empty and driver_abbr in df["Driver"].values:
@@ -72,15 +72,28 @@ def generate_driver_rating(driver_abbr):
             print(f"⚠️ Skipping {year}: {e}")
 
     if not recent_races:
-        print(f"❌ No valid data for {driver_abbr}")
-        return
+        return f"❌ No valid data for {driver_abbr}"
 
     combined = pd.concat(recent_races)
     recent_avg = combined["Total Points"].mean()
+    last_race_points = combined.iloc[0]["Total Points"]
+
+    # Get seasonal average from available averages
+    seasonal_avg = None
+    for year in years:
+        avg_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
+        if os.path.exists(avg_path):
+            avg_df = pd.read_csv(avg_path)
+            match = avg_df[avg_df["Driver"] == driver_abbr]
+            if not match.empty:
+                seasonal_avg = match["Total Points"].values[0]
+                break
 
     summary = {
         "Driver": driver_abbr,
-        "Last 3 Race Avg": round(recent_avg, 2)
+        "Seasonal Average": round(seasonal_avg, 2) if seasonal_avg else "N/A",
+        "Last 3 Race Avg": round(recent_avg, 2),
+        "Last Race Points": round(last_race_points, 2)
     }
 
     for _, row in combined.iterrows():
@@ -88,4 +101,13 @@ def generate_driver_rating(driver_abbr):
 
     output_path = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
     pd.DataFrame([summary]).to_csv(output_path, index=False)
-    print(f"✅ Driver rating saved to {output_path}")
+    return pd.DataFrame([summary])
+
+def get_all_cached_drivers():
+    drivers = set()
+    for year in [2025, 2024, 2023, 2022, 2021]:
+        path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
+        if os.path.exists(path):
+            df = pd.read_csv(path)
+            drivers.update(df["Driver"].dropna().unique())
+    return sorted(drivers)
