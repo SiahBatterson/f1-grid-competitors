@@ -159,24 +159,18 @@ def generate_all_driver_ratings():
     drivers = get_all_cached_drivers()
     print(f"🔁 Generating full driver rating files for {len(drivers)} drivers...")
 
-    for year in [2025, 2024, 2023, 2022, 2021]:
-        try:
-            schedule = fastf1.get_event_schedule(year)
-            for _, row in schedule.iterrows():
-                gp_name = row["EventName"]
-                df = calculate_points(year, gp_name)
-                if not df.empty:
-                    for driver in df["Driver"].unique():
-                        try:
-                            generate_driver_rating(driver)
-                            print(f"✅ Cached {driver}")
-                        except Exception as e:
-                            print(f"❌ Failed to generate for {driver}: {e}")
-        except Exception as e:
-            print(f"⚠️ Skipping schedule for {year}: {e}")
-
-    # ✅ Final re-sort and save to fix visibility bugs
     weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
+    if os.path.exists(weighted_path):
+        os.remove(weighted_path)  # Clear stale file before writing
+
+    for driver in drivers:
+        try:
+            generate_driver_rating(driver)  # Will append to the fresh file
+            print(f"✅ Cached {driver}")
+        except Exception as e:
+            print(f"❌ Failed to generate for {driver}: {e}")
+
+    # Final sort and save
     if os.path.exists(weighted_path):
         df = pd.read_csv(weighted_path)
         df = df.sort_values(by="Weighted Avg", ascending=False)
