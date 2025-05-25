@@ -149,6 +149,7 @@ def generate_driver_rating(driver_abbr):
 
 def get_all_cached_drivers():
     drivers = set()
+
     for year in [2025, 2024, 2023, 2022, 2021]:
         schedule_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
         if os.path.exists(schedule_path):
@@ -161,7 +162,15 @@ def get_all_cached_drivers():
             if driver:
                 drivers.add(driver)
 
+    if not drivers:
+        # Fallback list of known F1 abbreviations (as of 2023–2025)
+        drivers.update([
+            "VER", "PER", "HAM", "RUS", "NOR", "LEC", "SAI", "ALO", "OCO",
+            "GAS", "PIA", "BOT", "ZHO", "MAG", "HUL", "TSU", "ALB", "SAR"
+        ])
+
     return sorted(drivers)
+
 
 def generate_all_driver_ratings():
     drivers = get_all_cached_drivers()
