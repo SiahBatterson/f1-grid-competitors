@@ -39,7 +39,7 @@ def home():
     return render_template("home.html", drivers=drivers, top_drivers=top_drivers)
 
 
-@app.route("/generate_all_driver_ratings", methods=["POST"])
+@app.route("/generate_all_driver_ratings", methods=["GET", "POST"])
 def generate_all_driver_ratings_route():
     print("🚀 POST /generate_all_driver_ratings triggered")
     generate_all_driver_ratings()
