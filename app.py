@@ -38,6 +38,29 @@ def home():
     top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
     return render_template("home.html", drivers=drivers, top_drivers=top_drivers)
 
+@app.route("/generate_all_driver_ratings", methods=["POST"])
+def generate_all_driver_ratings_route():
+    print("🚀 POST /generate_all_driver_ratings triggered")
+    generate_all_driver_ratings()
+    drivers = get_all_cached_drivers()
+    top_drivers = []
+
+    for d in drivers:
+        try:
+            df, hype, value = generate_driver_rating(d)
+            last_3_avg = df[df["Scope"] == "Last 3 Races Avg"]
+            if not last_3_avg.empty:
+                top_drivers.append({
+                    "driver": d,
+                    "points": last_3_avg["Total Points"].values[0],
+                    "value": f"${value:,.0f}" if value else "N/A"
+                })
+        except Exception:
+            continue
+
+    top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
+    return render_template("home.html", drivers=drivers, top_drivers=top_drivers)
+
 
 @app.route("/clear_driver_ratings", methods=["POST"])
 def clear_driver_ratings():
