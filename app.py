@@ -36,6 +36,7 @@ def home():
             continue
 
     top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
+    print(f"🏆 Top drivers selected: {top_drivers}")
     return render_template("home.html", drivers=drivers, top_drivers=top_drivers)
 
 
