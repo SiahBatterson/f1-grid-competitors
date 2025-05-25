@@ -57,9 +57,9 @@ def calculate_points(year, gp_name):
         print(f"⚠️ Error: {e}")
         return pd.DataFrame()
 
-def generate_driver_rating(driver_abbr):
+def generate_driver_rating(driver_abbr, force=False):
     output_path = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
-    if os.path.exists(output_path):
+    if os.path.exists(output_path) and not force:
         print(f"📂 Using cached driver rating for {driver_abbr}")
         return pd.read_csv(output_path)
 
@@ -83,7 +83,7 @@ def generate_driver_rating(driver_abbr):
             print(f"⚠️ Skipping {year}: {e}")
 
     if not all_driver_races:
-        return pd.DataFrame([{"Error": f"❌ No valid data for {driver_abbr}"}])
+        return pd.DataFrame([{"Error": f"❌ No valid data for {driver_abbr}"}]), None, None
 
     full_df = pd.concat(all_driver_races, ignore_index=True)
     full_df = full_df.sort_values(by=["Year", "Grand Prix"], ascending=[False, False])
@@ -134,42 +134,20 @@ def generate_driver_rating(driver_abbr):
             updated = weighted_row
         updated = updated.sort_values(by="Weighted Avg", ascending=False)
         updated.to_csv(weighted_path, index=False)
+        print(f"💾 Updated weighted average for {driver_abbr}: {weighted_total}")
+    else:
+        weighted_total = None
 
     full_out = pd.concat([seasonal_avg, last_3, last_3_avg], ignore_index=True)
     full_out.to_csv(output_path, index=False)
 
-    # Compute fantasy value
     fantasy_value = None
     if not last_race.empty:
         hype = weighted_total
         avg = seasonal_avg["Total Points"].values[0]
         fantasy_value = round(((avg * 0.9) + (hype * 0.1)) * 250000, 2)
 
-    return full_out, weighted_total if not last_race.empty else None, fantasy_value
-
-def get_all_cached_drivers():
-    drivers = set()
-
-    for year in [2025, 2024, 2023, 2022, 2021]:
-        schedule_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
-        if os.path.exists(schedule_path):
-            df = pd.read_csv(schedule_path)
-            drivers.update(df["Driver"].dropna().unique())
-
-    for fname in os.listdir(CACHE_DIR):
-        if fname.startswith("Driver Rating - ") and fname.endswith(".csv"):
-            driver = fname.replace("Driver Rating - ", "").replace(".csv", "").strip()
-            if driver:
-                drivers.add(driver)
-
-    if not drivers:
-        # Fallback list of known F1 abbreviations (as of 2023–2025)
-        drivers.update([
-            "VER", "PER", "HAM", "RUS", "NOR", "LEC", "SAI", "ALO", "OCO",
-            "GAS", "PIA", "BOT", "ZHO", "MAG", "HUL", "TSU", "ALB", "SAR"
-        ])
-
-    return sorted(drivers)
+    return full_out, weighted_total, fantasy_value
 
 
 def generate_all_driver_ratings():
