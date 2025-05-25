@@ -63,7 +63,7 @@ def generate_driver_rating(driver_abbr, force=False):
         print(f"📂 Using cached driver rating for {driver_abbr}")
         return pd.read_csv(output_path)
 
-    print(f"🧮 Generating fresh driver rating for {driver_abbr}")
+    print(f"🧲 Generating fresh driver rating for {driver_abbr}")
     all_driver_races = []
     years = [2025, 2024, 2023, 2022, 2021]
 
@@ -89,7 +89,7 @@ def generate_driver_rating(driver_abbr, force=False):
     full_df = full_df.sort_values(by=["Year", "Grand Prix"], ascending=[False, False])
 
     last_3 = full_df.head(3)
-    last_3_avg = pd.DataFrame([{
+    last_3_avg = pd.DataFrame([{ 
         "Driver": driver_abbr,
         "Scope": "Last 3 Races Avg",
         "Quali": round(last_3["Quali"].mean(), 2),
@@ -101,7 +101,7 @@ def generate_driver_rating(driver_abbr, force=False):
         "Grand Prix": None
     }])
 
-    seasonal_avg = pd.DataFrame([{
+    seasonal_avg = pd.DataFrame([{ 
         "Driver": driver_abbr,
         "Scope": "Seasonal Average",
         "Quali": round(full_df["Quali"].mean(), 2),
@@ -120,9 +120,9 @@ def generate_driver_rating(driver_abbr, force=False):
             (last_3_avg["Total Points"].values[0] * 0.2) +
             (last_race["Total Points"].values[0] * 0.2), 2
         )
-        weighted_row = pd.DataFrame([{
-            "Driver": driver_abbr,
-            "Weighted Avg": weighted_total
+        weighted_row = pd.DataFrame([{ 
+            "Driver": driver_abbr, 
+            "Weighted Avg": weighted_total 
         }])
 
         weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
@@ -134,7 +134,7 @@ def generate_driver_rating(driver_abbr, force=False):
             updated = weighted_row
         updated = updated.sort_values(by="Weighted Avg", ascending=False)
         updated.to_csv(weighted_path, index=False)
-        print(f"💾 Updated weighted average for {driver_abbr}: {weighted_total}")
+        print(f"📂 Updated weighted average for {driver_abbr}: {weighted_total}")
     else:
         weighted_total = None
 
@@ -148,7 +148,6 @@ def generate_driver_rating(driver_abbr, force=False):
         fantasy_value = round(((avg * 0.9) + (hype * 0.1)) * 250000, 2)
 
     return full_out, weighted_total, fantasy_value
-
 
 def get_all_cached_drivers():
     drivers = set()
@@ -166,14 +165,12 @@ def get_all_cached_drivers():
                 drivers.add(driver)
 
     if not drivers:
-        # Fallback list of known F1 abbreviations (as of 2023–2025)
         drivers.update([
             "VER", "PER", "HAM", "RUS", "NOR", "LEC", "SAI", "ALO", "OCO",
             "GAS", "PIA", "BOT", "ZHO", "MAG", "HUL", "TSU", "ALB", "SAR"
         ])
 
     return sorted(drivers)
-
 
 def generate_all_driver_ratings():
     drivers = get_all_cached_drivers()
@@ -197,5 +194,3 @@ def generate_all_driver_ratings():
         print(f"✅ Final weighted driver list saved to: {weighted_path}")
     else:
         print("⚠️ No weighted data generated.")
-
-

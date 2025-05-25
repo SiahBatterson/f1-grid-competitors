@@ -25,14 +25,16 @@ def home():
     for d in drivers:
         try:
             df, hype, value = generate_driver_rating(d)
-            last_3_avg = df[df["Scope"] == "Last 3 Races Avg"]
-            if not last_3_avg.empty:
-                top_drivers.append({
-                    "driver": d,
-                    "points": last_3_avg["Total Points"].values[0],
-                    "value": f"${value:,.0f}" if value else "N/A"
-                })
-        except Exception:
+            if "Scope" in df.columns:
+                last_3_avg = df[df["Scope"].astype(str).str.strip() == "Last 3 Races Avg"]
+                if not last_3_avg.empty:
+                    top_drivers.append({
+                        "driver": d,
+                        "points": last_3_avg["Total Points"].values[0],
+                        "value": f"${value:,.0f}" if value else "N/A"
+                    })
+        except Exception as e:
+            print(f"❌ Failed to process driver {d}: {e}")
             continue
 
     top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
@@ -50,14 +52,16 @@ def generate_all_driver_ratings_route():
     for d in drivers:
         try:
             df, hype, value = generate_driver_rating(d)
-            last_3_avg = df[df["Scope"] == "Last 3 Races Avg"]
-            if not last_3_avg.empty:
-                top_drivers.append({
-                    "driver": d,
-                    "points": last_3_avg["Total Points"].values[0],
-                    "value": f"${value:,.0f}" if value else "N/A"
-                })
-        except Exception:
+            if "Scope" in df.columns:
+                last_3_avg = df[df["Scope"].astype(str).str.strip() == "Last 3 Races Avg"]
+                if not last_3_avg.empty:
+                    top_drivers.append({
+                        "driver": d,
+                        "points": last_3_avg["Total Points"].values[0],
+                        "value": f"${value:,.0f}" if value else "N/A"
+                    })
+        except Exception as e:
+            print(f"❌ Failed to process driver {d}: {e}")
             continue
 
     top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
@@ -74,7 +78,7 @@ def clear_driver_ratings():
                 deleted.append(file)
             except Exception as e:
                 print(f"❌ Failed to delete {file}: {e}")
-    return f"<h2>🧹 Cleared {len(deleted)} driver rating files.</h2><a href='/'>⬅ Back</a>"
+    return f"<h2>🪝 Cleared {len(deleted)} driver rating files.</h2><a href='/'>⬅ Back</a>"
 
 
 @app.route("/weighted")
