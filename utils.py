@@ -164,3 +164,49 @@ def generate_driver_rating(driver_abbr, force=False):
         fantasy_value = round(((avg * 0.9) + (hype * 0.1)) * 250000, 2)
 
     return full_out, weighted_total, fantasy_value
+
+def get_all_cached_drivers():
+    drivers = set()
+
+    for year in [2025, 2024, 2023, 2022, 2021]:
+        schedule_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
+        if os.path.exists(schedule_path):
+            df = pd.read_csv(schedule_path)
+            drivers.update(df["Driver"].dropna().unique())
+
+    for fname in os.listdir(CACHE_DIR):
+        if fname.startswith("Driver Rating - ") and fname.endswith(".csv"):
+            driver = fname.replace("Driver Rating - ", "").replace(".csv", "").strip()
+            if driver:
+                drivers.add(driver)
+
+    if not drivers:
+        drivers.update([
+            "VER", "PER", "HAM", "RUS", "NOR", "LEC", "SAI", "ALO", "OCO",
+            "GAS", "PIA", "BOT", "ZHO", "MAG", "HUL", "TSU", "ALB", "SAR"
+        ])
+
+    return sorted(drivers)
+
+def generate_all_driver_ratings():
+    drivers = get_all_cached_drivers()
+    print(f"🔁 Generating full driver rating files for {len(drivers)} drivers...")
+
+    weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
+    if os.path.exists(weighted_path):
+        os.remove(weighted_path)
+
+    for driver in drivers:
+        try:
+            generate_driver_rating(driver, force=True)
+            print(f"✅ Cached {driver}")
+        except Exception as e:
+            print(f"❌ Failed to generate for {driver}: {e}")
+
+    if os.path.exists(weighted_path):
+        df = pd.read_csv(weighted_path)
+        df = df.sort_values(by="Weighted Avg", ascending=False)
+        df.to_csv(weighted_path, index=False)
+        print(f"✅ Final weighted driver list saved to: {weighted_path}")
+    else:
+        print("⚠️ No weighted data generated.")
