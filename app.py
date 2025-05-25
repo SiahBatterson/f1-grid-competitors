@@ -41,10 +41,10 @@ def home():
 @app.route("/generate_all_driver_ratings", methods=["POST"])
 def generate_all_driver_ratings_route():
     print("🚀 POST /generate_all_driver_ratings triggered")
-    generate_all_driver_ratings()
+    generate_all_driver_ratings()  # This should update/create files
     drivers = get_all_cached_drivers()
-    top_drivers = []
 
+    top_drivers = []
     for d in drivers:
         try:
             df, hype, value = generate_driver_rating(d)
@@ -60,6 +60,7 @@ def generate_all_driver_ratings_route():
 
     top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
     return render_template("home.html", drivers=drivers, top_drivers=top_drivers)
+
 
 
 @app.route("/clear_driver_ratings", methods=["POST"])
