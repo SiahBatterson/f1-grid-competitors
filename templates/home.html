@@ -63,7 +63,19 @@
     {% endif %}
 
     <div class="section text-center">
-      <a href="{{ url_for('season') }}" class="btn btn-primary btn-lg me-2">🏁 All Race Scores</a>
+      <form method="POST" action="{{ url_for('generate_driver_rating_route') }}" class="d-inline me-2">
+        <div class="input-group">
+          <select name="driver" class="form-select" required>
+            <option disabled selected value="">Select Driver</option>
+            {% for abbr in drivers %}
+            <option value="{{ abbr }}">{{ driver_name_map.get(abbr, abbr) }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn btn-primary" type="submit">🔍 View Driver</button>
+        </div>
+      </form>
+      
+      
       <a href="{{ url_for('averages') }}" class="btn btn-secondary btn-lg me-2">📊 Driver Averages</a>
       <a href="{{ url_for('weighted') }}" class="btn btn-dark btn-lg">🔥 Hype Ratings</a>
     </div>

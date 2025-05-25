@@ -20,6 +20,28 @@ CACHE_DIR = "/mnt/f1_cache"
 @app.route("/")
 def home():
     drivers = get_all_cached_drivers()
+    driver_name_map = {
+    "VER": "Max Verstappen",
+    "HAM": "Lewis Hamilton",
+    "LEC": "Charles Leclerc",
+    "SAI": "Carlos Sainz",
+    "PER": "Sergio Perez",
+    "ALO": "Fernando Alonso",
+    "NOR": "Lando Norris",
+    "PIA": "Oscar Piastri",
+    "RUS": "George Russell",
+    "TSU": "Yuki Tsunoda",
+    "ZHO": "Zhou Guanyu",
+    "ALB": "Alex Albon",
+    "SAR": "Logan Sargeant",
+    "HUL": "Nico Hulkenberg",
+    "MAG": "Kevin Magnussen",
+    "RIC": "Daniel Ricciardo",
+    "BOT": "Valtteri Bottas",
+    "GAS": "Pierre Gasly",
+    "OCO": "Esteban Ocon"
+    # Add any others as needed
+}
     top_drivers = []
 
     for d in drivers:
@@ -39,7 +61,7 @@ def home():
 
     top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
     print(f"🏆 Top drivers selected: {top_drivers}")
-    return render_template("home.html", drivers=drivers, top_drivers=top_drivers)
+    return render_template("home.html", drivers=drivers, driver_name_map=driver_name_map, top_drivers=top_drivers)
 
 
 @app.route("/generate_all_driver_ratings", methods=["GET", "POST"])
