@@ -150,6 +150,31 @@ def generate_driver_rating(driver_abbr, force=False):
     return full_out, weighted_total, fantasy_value
 
 
+def get_all_cached_drivers():
+    drivers = set()
+
+    for year in [2025, 2024, 2023, 2022, 2021]:
+        schedule_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
+        if os.path.exists(schedule_path):
+            df = pd.read_csv(schedule_path)
+            drivers.update(df["Driver"].dropna().unique())
+
+    for fname in os.listdir(CACHE_DIR):
+        if fname.startswith("Driver Rating - ") and fname.endswith(".csv"):
+            driver = fname.replace("Driver Rating - ", "").replace(".csv", "").strip()
+            if driver:
+                drivers.add(driver)
+
+    if not drivers:
+        # Fallback list of known F1 abbreviations (as of 2023–2025)
+        drivers.update([
+            "VER", "PER", "HAM", "RUS", "NOR", "LEC", "SAI", "ALO", "OCO",
+            "GAS", "PIA", "BOT", "ZHO", "MAG", "HUL", "TSU", "ALB", "SAR"
+        ])
+
+    return sorted(drivers)
+
+
 def generate_all_driver_ratings():
     drivers = get_all_cached_drivers()
     print(f"🔁 Generating full driver rating files for {len(drivers)} drivers...")
