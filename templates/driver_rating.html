@@ -48,9 +48,7 @@
 
     <div class="stat-box text-center">
       <h3>💰 Current Value</h3>
-      <p class="display-6 fw-semibold">
-        ${{ fantasy_value | int | string | replace(",", "") }}
-      </p>
+      <p class="display-6 fw-semibold">{{ fantasy_value }}</p>
 
       {% if previous_weighted is not none %}
       <p class="text-muted">

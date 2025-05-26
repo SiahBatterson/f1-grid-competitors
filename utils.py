@@ -63,7 +63,23 @@ def generate_driver_rating(driver_abbr, force=False):
     if os.path.exists(output_path) and not force:
         print(f"📂 Using cached driver rating for {driver_abbr}")
         df = pd.read_csv(output_path)
-        return df, None, None, None
+
+        try:
+            avg = df[df["Scope"] == "Seasonal Average"]["Total Points"].values[0]
+            weighted_total = round(
+                avg * 0.6 +
+                df[df["Scope"] == "Last 3 Races Avg"]["Total Points"].values[0] * 0.2 +
+                df[df["Scope"].isna()].iloc[0]["Total Points"] * 0.2,
+                2
+            )
+            fantasy_value = round(((avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
+            previous_weighted = weighted_total  # Optional: make smarter
+        except Exception as e:
+            print(f"⚠️ Failed to compute value from cached file: {e}")
+            weighted_total = fantasy_value = previous_weighted = None
+
+        return df, weighted_total, fantasy_value, previous_weighted
+
 
     print(f"🧲 Generating fresh driver rating for {driver_abbr}")
     all_driver_races = []
