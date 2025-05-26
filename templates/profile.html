@@ -32,27 +32,30 @@
 
     <!-- 🏎️ Driver Cards -->
     <h4 class="mb-3">🏎️ Your Drivers</h4>
-    {% if drivers %}
+    {% if driver_cards %}
     <div class="row row-cols-1 row-cols-md-3 g-4">
-      {% for d in drivers %} {% set df, hype, value, _ =
-      generate_driver_rating(d) %} {% set img_path = url_for('static',
-      filename='driver_images/' ~ d ~ '.webp') %}
+      {% for card in driver_cards %}
       <div class="col">
         <div class="card h-100 driver-card shadow-sm">
           <img
-            src="{{ img_path }}"
-            alt="{{ d }}"
-            onerror="this.src='https://via.placeholder.com/300x160?text={{ d }}'"
+            src="{{ url_for('static', filename='driver_images/' ~ card.image) }}"
+            alt="{{ card.name }}"
+            onerror="this.src='https://via.placeholder.com/300x160?text={{ card.code }}'"
           />
           <div class="card-body text-center">
-            <h5 class="card-title">{{ d }}</h5>
+            <h5 class="card-title">{{ card.name }}</h5>
             <p class="mb-1">
-              🔥 Hype: <strong>{{ "{:.2f}".format(hype or 0) }}</strong>
+              🔥 Hype: <strong>{{ "{:.2f}".format(card.hype or 0) }}</strong>
             </p>
             <p class="mb-1">
-              💰 Value: <strong>${{ "{:,.0f}".format(value or 0) }}</strong>
+              💰 Value:
+              <strong>${{ "{:,.0f}".format(card.value or 0) }}</strong>
             </p>
-            <form method="POST" action="/remove_driver/{{ d }}" class="mt-2">
+            <form
+              method="POST"
+              action="/remove_driver/{{ card.code }}"
+              class="mt-2"
+            >
               <button class="btn btn-outline-danger btn-sm w-100">
                 ➖ Sell Driver
               </button>
@@ -77,7 +80,7 @@
             <p class="text-muted mb-3">Cost: $1,000,000</p>
             <form method="POST" action="/boost/qualifying">
               <button class="btn btn-outline-primary w-100">
-                Activate (not implimented)
+                Activate (not implemented)
               </button>
             </form>
           </div>
@@ -90,7 +93,7 @@
             <p class="text-muted mb-3">Cost: $1,000,000</p>
             <form method="POST" action="/boost/race">
               <button class="btn btn-outline-primary w-100">
-                Activate (not implimented)
+                Activate (not implemented)
               </button>
             </form>
           </div>
@@ -103,7 +106,7 @@
             <p class="text-muted mb-3">Cost: $1,000,000</p>
             <form method="POST" action="/boost/pass">
               <button class="btn btn-outline-primary w-100">
-                Activate (not implimented)
+                Activate (not implemented)
               </button>
             </form>
           </div>

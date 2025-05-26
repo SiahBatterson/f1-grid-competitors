@@ -347,7 +347,25 @@ def delete_averages():
 @login_required
 def profile():
     drivers = current_user.drivers.split(",") if current_user.drivers else []
-    return render_template("profile.html", user=current_user, drivers=drivers)
+    driver_cards = []
+
+    for code in drivers:
+        try:
+            df, hype, value, _ = generate_driver_rating(code)
+            img_filename = driver_info.get(code, {}).get("image", "placeholder.webp")
+            full_name = driver_info.get(code, {}).get("name", code)
+            driver_cards.append({
+                "code": code,
+                "name": full_name,
+                "image": img_filename,
+                "hype": hype,
+                "value": value
+            })
+        except:
+            continue
+
+    balance_delta = current_user.balance - 15000000
+    return render_template("profile.html", user=current_user, driver_cards=driver_cards, balance_delta=balance_delta)
 
 @app.route("/admin/users")
 @login_required
