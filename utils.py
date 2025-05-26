@@ -59,30 +59,11 @@ def calculate_points(year, gp_name):
 
 def generate_driver_rating(driver_abbr, force=False):
     output_path = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
-    
+
     if os.path.exists(output_path) and not force:
         print(f"📂 Using cached driver rating for {driver_abbr}")
         df = pd.read_csv(output_path)
-
-        last_3 = df[df["Scope"].astype(str).str.strip() == "Last 3 Races Avg"]
-        seasonal_avg = df[df["Scope"].astype(str).str.strip() == "Seasonal Average"]
-
-        try:
-            hype_df = pd.read_csv(os.path.join(CACHE_DIR, "Weighted Driver Averages.csv"))
-            hype_val = hype_df[hype_df["Driver"] == driver_abbr]["Weighted Avg"].values[0]
-        except Exception:
-            hype_val = None
-
-        fantasy_value = None
-        try:
-            if not seasonal_avg.empty and hype_val is not None:
-                avg = float(seasonal_avg["Total Points"].values[0])
-                fantasy_value = round(((avg * 0.9) + (float(hype_val) * 0.1)) * 250000, 2)
-        except Exception as e:
-            print(f"❌ Error calculating fantasy value for {driver_abbr}: {e}")
-            fantasy_value = None
-
-        return df, hype_val, fantasy_value
+        return df, None, None, None
 
     print(f"🧲 Generating fresh driver rating for {driver_abbr}")
     all_driver_races = []
@@ -104,12 +85,14 @@ def generate_driver_rating(driver_abbr, force=False):
             print(f"⚠️ Skipping {year}: {e}")
 
     if not all_driver_races:
-        return pd.DataFrame([{"Error": f"❌ No valid data for {driver_abbr}"}]), None, None
+        return pd.DataFrame([{"Error": f"❌ No valid data for {driver_abbr}"}]), None, None, None
 
     full_df = pd.concat(all_driver_races, ignore_index=True)
     full_df = full_df.sort_values(by=["Year", "Grand Prix"], ascending=[False, False])
 
     last_3 = full_df.head(3)
+    prev_3 = full_df.iloc[1:4]
+
     last_3_avg = pd.DataFrame([{ 
         "Driver": driver_abbr,
         "Scope": "Last 3 Races Avg",
@@ -118,6 +101,18 @@ def generate_driver_rating(driver_abbr, force=False):
         "+Pos": round(last_3["+Pos"].mean(), 2),
         "Q/R/+O": None,
         "Total Points": round(last_3["Total Points"].mean(), 2),
+        "Year": None,
+        "Grand Prix": None
+    }])
+
+    prev_3_avg = pd.DataFrame([{ 
+        "Driver": driver_abbr,
+        "Scope": "Prev 3 Races Avg",
+        "Quali": round(prev_3["Quali"].mean(), 2),
+        "Race": round(prev_3["Race"].mean(), 2),
+        "+Pos": round(prev_3["+Pos"].mean(), 2),
+        "Q/R/+O": None,
+        "Total Points": round(prev_3["Total Points"].mean(), 2),
         "Year": None,
         "Grand Prix": None
     }])
@@ -135,46 +130,43 @@ def generate_driver_rating(driver_abbr, force=False):
     }])
 
     last_race = full_df.head(1)
-    weighted_total = None
-    if not last_race.empty:
-        weighted_total = round(
-            (seasonal_avg["Total Points"].values[0] * 0.6) +
-            (last_3_avg["Total Points"].values[0] * 0.2) +
-            (last_race["Total Points"].values[0] * 0.2), 2
-        )
-        weighted_row = pd.DataFrame([{ 
-            "Driver": driver_abbr, 
-            "Weighted Avg": weighted_total 
-        }])
 
-        weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
-        if os.path.exists(weighted_path):
-            existing = pd.read_csv(weighted_path)
-            existing = existing[existing["Driver"] != driver_abbr]
-            updated = pd.concat([existing, weighted_row], ignore_index=True)
-        else:
-            updated = weighted_row
-        updated = updated.sort_values(by="Weighted Avg", ascending=False)
-        updated.to_csv(weighted_path, index=False)
-        print(f"📂 Updated weighted average for {driver_abbr}: {weighted_total}")
+    weighted_total = round(
+        seasonal_avg["Total Points"].values[0] * 0.6 +
+        last_3_avg["Total Points"].values[0] * 0.2 +
+        last_race["Total Points"].values[0] * 0.2,
+        2
+    )
+
+    previous_weighted = round(
+        seasonal_avg["Total Points"].values[0] * 0.6 +
+        prev_3_avg["Total Points"].values[0] * 0.2 +
+        full_df.iloc[1:2]["Total Points"].values[0] * 0.2,
+        2
+    ) if len(full_df) > 3 else weighted_total
+
+    weighted_row = pd.DataFrame([{ 
+        "Driver": driver_abbr, 
+        "Weighted Avg": weighted_total 
+    }])
+
+    weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
+    if os.path.exists(weighted_path):
+        existing = pd.read_csv(weighted_path)
+        existing = existing[existing["Driver"] != driver_abbr]
+        updated = pd.concat([existing, weighted_row], ignore_index=True)
+    else:
+        updated = weighted_row
+    updated = updated.sort_values(by="Weighted Avg", ascending=False)
+    updated.to_csv(weighted_path, index=False)
 
     full_out = pd.concat([seasonal_avg, last_3, last_3_avg], ignore_index=True)
     full_out.to_csv(output_path, index=False)
 
-    fantasy_value = None
-    try:
-        if weighted_total is not None and not seasonal_avg.empty:
-            raw_avg = seasonal_avg["Total Points"].values[0]
-            avg = float(seasonal_avg["Total Points"].values[0])
-            print(f"🧪 Debug: seasonal_avg['Total Points'] = {raw_avg} ({type(raw_avg)})")
-            print(f"🧪 Debug: weighted_total = {weighted_total} ({type(weighted_total)})")
+    avg = seasonal_avg["Total Points"].values[0]
+    fantasy_value = round(((avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
 
-            fantasy_value = round(((avg * 0.9) + (float(weighted_total) * 0.1)) * 250000, 2)
-    except Exception as e:
-        print(f"❌ Error calculating fantasy value for {driver_abbr}: {e}")
-        fantasy_value = None
-
-    return full_out, weighted_total, fantasy_value
+    return full_out, weighted_total, fantasy_value, previous_weighted
 
 def get_all_cached_drivers():
     drivers = set()
