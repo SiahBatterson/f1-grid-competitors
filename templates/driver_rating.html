@@ -51,11 +51,8 @@
       <p class="display-6 fw-semibold">{{ fantasy_value }}</p>
 
       {% if previous_weighted is not none %}
-      <p class="text-muted">
-        Previously: ${{ previous_weighted | float | multiply(0.1) |
-        add(season_avg * 0.9) | multiply(250000) | round(2) | int | string |
-        replace(",", "") }}
-      </p>
+      <p class="text-muted">Previously: {{ previous_value }}</p>
+
       {% endif %}
     </div>
 
