@@ -122,18 +122,31 @@ def generate_driver_rating_route():
             fantasy_value_display = f"${round(fantasy_value):,}" if fantasy_value else "N/A"
             previous_value = round((season_avg_pts * 0.9 + previous_weighted_avg * 0.1) * 250000) if previous_weighted_avg else None
             previous_value_display = f"${previous_value:,}" if previous_value is not None else "N/A"
+            # After previous_value and fantasy_value are calculated:
+            if previous_weighted_avg:
+                previous_value = round((season_avg_pts * 0.9 + previous_weighted_avg * 0.1) * 250000)
+                percent_change = round(((fantasy_value - previous_value) / previous_value) * 100, 2)
+                is_higher = fantasy_value > previous_value
+                value_color = "green" if is_higher else "red"
+                percent_display = f"{'▲' if is_higher else '▼'} {abs(percent_change)}%"
+            else:
+                previous_value = None
+                percent_display = ""
+                value_color = "black"
 
 
             return render_template(
             "driver_rating.html",
-            table=df.to_html(classes="table table-bordered text-center", index=False),
+            table=df,  # Pass the actual DataFrame, not HTML
             driver=driver,
             season_avg=season_avg_pts,
             hype=weighted_avg,
-            fantasy_value=fantasy_value_display,
-            previous_value=previous_value_display,
+            fantasy_value=f"${round(fantasy_value):,}",
+            previous_value=f"${previous_value:,}" if previous_value else "N/A",
             weighted_avg=weighted_avg,
-            previous_weighted=previous_weighted_avg
+            previous_weighted=previous_weighted_avg,
+            value_color=value_color,
+            percent_display=percent_display
         )
         except Exception as e:
             return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500

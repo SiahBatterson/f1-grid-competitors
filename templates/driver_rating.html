@@ -48,7 +48,9 @@
 
     <div class="stat-box text-center">
       <h3>💰 Current Value</h3>
-      <p class="display-6 fw-semibold">{{ fantasy_value }}</p>
+      <p class="display-6 fw-semibold" style="color: {{ value_color }}">
+        {{ fantasy_value }} <span class="fs-5">({{ percent_display }})</span>
+      </p>
 
       {% if previous_weighted is not none %}
       <p class="text-muted">Previously: {{ previous_value }}</p>
@@ -56,9 +58,41 @@
       {% endif %}
     </div>
 
-    <div class="stat-box">
-      <h3 class="text-center">📊 Performance Breakdown</h3>
-      {{ table|safe }}
+    <div class="row g-4">
+      {% for label, subset in [ ('📈 Last 3 Races', table.query("Scope == 'Last
+      3 Races Avg'")), ('📉 Previous 3 Races', table.query("Scope == 'Prev 3
+      Races Avg'")), ('📊 Season Average', table.query("Scope == 'Seasonal
+      Average'")), ('📍 Last Race', table[table['Scope'].isnull()].head(1)) ] %}
+      <div class="col-md-6">
+        <div class="card shadow-sm">
+          <div class="card-body text-center">
+            <h5 class="card-title">{{ label }}</h5>
+            <table class="table table-sm table-bordered text-center mb-0">
+              <thead>
+                <tr>
+                  {% for col in subset.columns if col not in ['Q/R/+O',
+                  'points_from_quali', 'points_from_race', 'points_from_gain']
+                  %}
+                  <th>{{ col }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for _, row in subset.iterrows() %}
+                <tr>
+                  {% for col in subset.columns if col not in ['Q/R/+O',
+                  'points_from_quali', 'points_from_race', 'points_from_gain']
+                  %}
+                  <td>{{ row[col] }}</td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
     </div>
 
     <div class="text-center mb-5">
