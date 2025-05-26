@@ -59,12 +59,13 @@ def calculate_points(year, gp_name):
 
 def generate_driver_rating(driver_abbr, force=False):
     output_path = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
+    
     if os.path.exists(output_path) and not force:
         print(f"📂 Using cached driver rating for {driver_abbr}")
         df = pd.read_csv(output_path)
 
         last_3 = df[df["Scope"].astype(str).str.strip() == "Last 3 Races Avg"]
-        seasonal = df[df["Scope"].astype(str).str.strip() == "Seasonal Average"]
+        seasonal_avg = df[df["Scope"].astype(str).str.strip() == "Seasonal Average"]
 
         try:
             hype_df = pd.read_csv(os.path.join(CACHE_DIR, "Weighted Driver Averages.csv"))
@@ -73,9 +74,13 @@ def generate_driver_rating(driver_abbr, force=False):
             hype_val = None
 
         fantasy_value = None
-        if not last_3.empty and not seasonal.empty and hype_val is not None:
-            avg = float(seasonal["Total Points"].values[0])
-            fantasy_value = round(((avg * 0.9) + (hype_val * 0.1)) * 250000, 2)
+        try:
+            if not seasonal_avg.empty and hype_val is not None:
+                avg = float(seasonal_avg["Total Points"].values[0])
+                fantasy_value = round(((avg * 0.9) + (float(hype_val) * 0.1)) * 250000, 2)
+        except Exception as e:
+            print(f"❌ Error calculating fantasy value for {driver_abbr}: {e}")
+            fantasy_value = None
 
         return df, hype_val, fantasy_value
 
@@ -157,20 +162,17 @@ def generate_driver_rating(driver_abbr, force=False):
     full_out.to_csv(output_path, index=False)
 
     fantasy_value = None
+    try:
+        if weighted_total is not None and not seasonal_avg.empty:
+            raw_avg = seasonal_avg["Total Points"].values[0]
+            avg = float(seasonal_avg["Total Points"].values[0])
+            print(f"🧪 Debug: seasonal_avg['Total Points'] = {raw_avg} ({type(raw_avg)})")
+            print(f"🧪 Debug: weighted_total = {weighted_total} ({type(weighted_total)})")
 
-    if weighted_total is not None:
-        avg = seasonal_avg["Total Points"].values[0]
+            fantasy_value = round(((avg * 0.9) + (float(weighted_total) * 0.1)) * 250000, 2)
+    except Exception as e:
+        print(f"❌ Error calculating fantasy value for {driver_abbr}: {e}")
         fantasy_value = None
-        try:
-            if not seasonal.empty and weighted_total is not None:
-                avg = float(seasonal["Total Points"].values[0])
-                weighted = float(weighted_total)
-                print(f"DEBUG avg: {avg} ({type(avg)}), weighted_total: {weighted_total} ({type(weighted_total)})")
-                fantasy_value = round(((avg * 0.9) + (weighted * 0.1)) * 250000, 2)
-        except Exception as e:
-            print(f"❌ Error calculating fantasy value for {driver_abbr}: {e}")
-            fantasy_value = None
-
 
     return full_out, weighted_total, fantasy_value
 
