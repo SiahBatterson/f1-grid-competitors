@@ -52,9 +52,14 @@ def calculate_points(year, gp_name):
         )
 
         df.to_csv(cache_path, index=False)
+        last_race_path = os.path.join(CACHE_DIR, f"{year} - LastProcessedRace.txt")
+        with open(last_race_path, "w") as f:
+            f.write(f"{year} - {gp_name}")
         return df[['Driver', 'Quali', 'Race', '+Pos', 'Q/R/+O', 'Total Points']]
     except Exception as e:
         print(f"⚠️ Error: {e}")
+        # Update the last processed race file
+
         return pd.DataFrame()
 
 def generate_driver_rating(driver_abbr, force=False):
@@ -237,3 +242,12 @@ def generate_all_driver_ratings():
         print(f"✅ Final weighted driver list saved to: {weighted_path}")
     else:
         print("⚠️ No weighted data generated.")
+
+def get_last_processed_race():
+    latest_years = sorted([2025, 2024, 2023, 2022, 2021], reverse=True)
+
+    for year in latest_years:
+        file_path = os.path.join(CACHE_DIR, f"{year} - LastProcessedRace.txt")
+        if os.path.exists(file_path):
+            with open(file_path, "r") as f:
+                return f.read().strip()

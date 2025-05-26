@@ -8,7 +8,8 @@ from utils import (
     calculate_points,
     generate_driver_rating,
     generate_all_driver_ratings,
-    get_all_cached_drivers
+    get_all_cached_drivers,
+    get_last_processed_race
 )
 
 fastf1.Cache.enable_cache("/mnt/f1_cache")
@@ -70,7 +71,8 @@ def home():
 
     top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
     print(f"🏆 Top drivers selected: {top_drivers}")
-    return render_template("home.html", drivers=drivers, driver_name_map=driver_name_map, top_drivers=top_drivers)
+    last_race_used = get_last_processed_race()
+    return render_template("home.html", drivers=drivers, driver_name_map=driver_name_map, top_drivers=top_drivers, last_race_used=last_race_used)
 
 
 @app.route("/generate_all_driver_ratings", methods=["GET", "POST"])
