@@ -107,6 +107,7 @@ def generate_driver_rating_route():
             season_avg_pts = float(season_avg["Total Points"].values[0]) if not season_avg.empty else 0.0
             hype = float(hype) if hype is not None else 0.0
             value = float(value) if value is not None else 0.0
+            fantasy_value = f"${round(value):,}" if value else "N/A"
 
             return render_template(
                 "driver_rating.html",
@@ -115,11 +116,12 @@ def generate_driver_rating_route():
                 season_avg=season_avg_pts,
                 hype=hype,
                 value=value,
-                weighted_avg=hype
+                weighted_avg=hype,
+                fantasy_value=fantasy_value  # 🔥 Pass this in
             )
         except Exception as e:
             return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
-    return "<h2>Use the form to POST a driver abbreviation.</h2>"
+
 
 
 @app.route("/preload", methods=["POST"])
