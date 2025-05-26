@@ -26,7 +26,7 @@
         class="{{ 'text-success' if net_worth_delta >= 0 else 'text-danger' }}"
       >
         {{ "+" if net_worth_delta >= 0 else "-" }}${{
-        "{:,.0f}".format(abs(net_worth_delta)) }}
+        "{:,.0f}".format(net_worth_delta | abs) }}
       </p>
     </div>
 
