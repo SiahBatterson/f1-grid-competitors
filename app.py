@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, Response
+from flask import Flask, render_template, request, Response, url_for
 import pandas as pd
 import os
 import fastf1
