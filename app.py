@@ -41,7 +41,7 @@ def home():
     top_drivers = []
     for d in drivers:
         try:
-            df, hype, value = generate_driver_rating(d)
+            df, hype, value, _ = generate_driver_rating(d)
             if "Scope" in df.columns:
                 last_3_avg = df[df["Scope"].astype(str).str.strip() == "Last 3 Races Avg"]
                 if not last_3_avg.empty:
