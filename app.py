@@ -20,13 +20,26 @@ CACHE_DIR = "/mnt/f1_cache"
 def home():
     drivers = get_all_cached_drivers()
     driver_name_map = {
-        "VER": "Max Verstappen", "HAM": "Lewis Hamilton", "LEC": "Charles Leclerc",
-        "SAI": "Carlos Sainz", "PER": "Sergio Perez", "ALO": "Fernando Alonso",
-        "NOR": "Lando Norris", "PIA": "Oscar Piastri", "RUS": "George Russell",
-        "TSU": "Yuki Tsunoda", "ZHO": "Zhou Guanyu", "ALB": "Alex Albon",
-        "SAR": "Logan Sargeant", "HUL": "Nico Hulkenberg", "MAG": "Kevin Magnussen",
-        "RIC": "Daniel Ricciardo", "BOT": "Valtteri Bottas", "GAS": "Pierre Gasly",
-        "OCO": "Esteban Ocon"
+        "VER": "Max Verstappen",
+        "TSU": "Yuki Tsunoda",
+        "LEC": "Charles Leclerc",
+        "HAM": "Lewis Hamilton",
+        "RUS": "George Russell",
+        "ANT": "Andrea Kimi Antonelli",
+        "NOR": "Lando Norris",
+        "PIA": "Oscar Piastri",
+        "ALO": "Fernando Alonso",
+        "STR": "Lance Stroll",
+        "GAS": "Pierre Gasly",
+        "COL": "Franco Colapinto",
+        "OCO": "Esteban Ocon",
+        "BEA": "Oliver Bearman",
+        "ALB": "Alex Albon",
+        "SAI": "Carlos Sainz",
+        "HUL": "Nico Hülkenberg",
+        "BOR": "Gabriel Bortoleto",
+        "HAD": "Isack Hadjar",
+        "LAW": "Liam Lawson"
     }
 
     # Only show drivers with results from 2025

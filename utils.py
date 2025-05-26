@@ -109,17 +109,6 @@ def generate_driver_rating(driver_abbr, force=False):
     last_3 = full_df.head(3)
     prev_3 = full_df.iloc[1:4]
 
-    print(f"\n==== {driver_abbr} RACE BREAKDOWN ====")
-    print("▶ Last 3 races:")
-    print(last_3[["Year", "Grand Prix", "Total Points"]])
-
-    print("\n▶ Previous 3 races (offset 1):")
-    print(prev_3[["Year", "Grand Prix", "Total Points"]])
-
-    print("\n▶ Last race only:")
-    print(last_race[["Year", "Grand Prix", "Total Points"]])
-
-
     last_3_avg = pd.DataFrame([{ 
         "Driver": driver_abbr,
         "Scope": "Last 3 Races Avg",
@@ -215,6 +204,12 @@ def get_all_cached_drivers():
             "VER", "PER", "HAM", "RUS", "NOR", "LEC", "SAI", "ALO", "OCO",
             "GAS", "PIA", "BOT", "ZHO", "MAG", "HUL", "TSU", "ALB", "SAR"
         ])
+    print(f"\n🔢 CALCULATION DEBUG for {driver_abbr}:")
+    print(f"  Seasonal Avg: {seasonal_avg['Total Points'].values[0]}")
+    print(f"  Last 3 Avg  : {last_3_avg['Total Points'].values[0]}")
+    print(f"  Prev 3 Avg  : {prev_3_avg['Total Points'].values[0]}")
+    print(f"  Last Race   : {full_df.iloc[0]['Total Points']}")
+    print(f"  Prev Last   : {full_df.iloc[1]['Total Points']}")
 
     return sorted(drivers)
  
