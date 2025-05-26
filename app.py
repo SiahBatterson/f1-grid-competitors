@@ -3,6 +3,8 @@ import pandas as pd
 import os
 import fastf1
 import time
+from flask_login import login_user, logout_user, login_required, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, Response, url_for, redirect
 from flask_login import LoginManager
 from models import db, User
@@ -197,6 +199,29 @@ def generate_driver_rating_route():
     return "<h2>Use the form to POST a driver abbreviation.</h2>"
 
 
+@app.route("/add_driver/<driver>", methods=["POST"])
+@login_required
+def add_driver(driver):
+    driver = driver.upper()
+    current = current_user.drivers.split(",") if current_user.drivers else []
+    if driver not in current:
+        current.append(driver)
+        current_user.drivers = ",".join(current)
+        current_user.balance -= 100_000  # or use real fantasy value
+        db.session.commit()
+    return redirect("/")
+
+@app.route("/remove_driver/<driver>", methods=["POST"])
+@login_required
+def remove_driver(driver):
+    current = current_user.drivers.split(",")
+    if driver in current:
+        current.remove(driver)
+        current_user.drivers = ",".join(current)
+        current_user.balance += 100_000
+        db.session.commit()
+    return redirect("/")
+
 
 
 @app.route("/preload", methods=["POST"])
@@ -300,6 +325,37 @@ def delete_averages():
     except Exception as e:
         return f"❌ Error deleting file: {e}", 500
 
+@app.route("/signup", methods=["GET", "POST"])
+def signup():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = generate_password_hash(request.form["password"], method='sha256')
+
+        if User.query.filter_by(username=username).first():
+            return "❌ Username already exists"
+        
+        user = User(username=username, password=password)
+        db.session.add(user)
+        db.session.commit()
+        return redirect("/login")
+
+    return render_template("signup.html")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        user = User.query.filter_by(username=request.form["username"]).first()
+        if user and check_password_hash(user.password, request.form["password"]):
+            login_user(user)
+            return redirect("/")
+        return "❌ Invalid login"
+    return render_template("login.html")
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
 
 @app.route("/season/<driver>")
 def driver_season_view(driver):

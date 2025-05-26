@@ -162,8 +162,19 @@
     </div>
 
     <div class="text-center mb-5">
-      <button class="btn btn-success btn-action">➕ Add Driver</button>
-      <button class="btn btn-danger btn-action">➖ Drop Driver</button>
+      {% if current_user.is_authenticated %}
+      <form method="POST" action="/add_driver/{{ driver }}">
+        <button type="submit" class="btn btn-success">➕ Add to My Team</button>
+      </form>
+      <form method="POST" action="/remove_driver/{{ driver }}">
+        <button type="submit" class="btn btn-danger">
+          ➖ Remove from My Team
+        </button>
+      </form>
+      {% else %}
+      <p><a href="/login">Log in</a> to manage your team</p>
+      {% endif %}
+
       <a
         href="{{ url_for('driver_season_view', driver=driver) }}"
         class="btn btn-secondary btn-action"
