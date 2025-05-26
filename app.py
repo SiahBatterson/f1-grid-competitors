@@ -137,11 +137,10 @@ def weighted():
 @app.route("/generate_driver_rating", methods=["GET", "POST"])
 def generate_driver_rating_route():
     if request.method == "POST":
+        driver = request.form.get("driver", "").upper().strip()
         base_img_url = "https://raw.githubusercontent.com/toUpperCase78/formula1-datasets/main/F1%202025%20Season%20Drivers/"
         img_filename = driver_image_map.get(driver, "placeholder.png")
         driver_img_url = f"{base_img_url}{img_filename}"
-
-        driver = request.form.get("driver", "").upper().strip()
         if not driver:
             return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
 
