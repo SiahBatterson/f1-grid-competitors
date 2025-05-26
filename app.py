@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import fastf1
 import time
+from datetime import datetime
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, Response, url_for, redirect
@@ -179,8 +180,8 @@ def generate_driver_rating_route():
             else:
                 value_color = "black"
                 percent_display = ""
-
-            return render_template(
+                weekday = datetime.utcnow().weekday()
+                return render_template(
                 "driver_rating.html",
                 driver=driver,
                 driver_img_url=driver_img_url,
@@ -191,7 +192,8 @@ def generate_driver_rating_route():
                 season_avg=season_avg_row.to_dict(orient="records")[0],
                 last_3=last_3_row.to_dict(orient="records")[0],
                 prev_3=prev_3_row.to_dict(orient="records")[0],
-                last_race=last_race_row.to_dict(orient="records")[0]
+                last_race=last_race_row.to_dict(orient="records")[0],
+                weekday=weekday
             )
         except Exception as e:
             return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500

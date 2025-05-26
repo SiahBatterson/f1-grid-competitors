@@ -163,7 +163,7 @@
 
     <div class="text-center my-4">
       <div class="d-flex flex-column align-items-center gap-2">
-        {% if current_user.is_authenticated %}
+        {% if current_user.is_authenticated %} {% if weekday < 4 %}
         <form method="POST" action="/add_driver/{{ driver }}">
           <button type="submit" class="btn btn-success w-100">
             ➕ Purchase
@@ -173,6 +173,10 @@
           <button type="submit" class="btn btn-danger w-100">➖ Sell</button>
         </form>
         {% else %}
+        <div class="alert alert-warning text-center w-100">
+          ⚠️ Driver changes are locked during race weekends (Fri–Sun)
+        </div>
+        {% endif %} {% else %}
         <p><a href="/login">Log in</a> to manage your team</p>
         {% endif %}
         <a
