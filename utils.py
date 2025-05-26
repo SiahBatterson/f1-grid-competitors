@@ -109,6 +109,17 @@ def generate_driver_rating(driver_abbr, force=False):
     last_3 = full_df.head(3)
     prev_3 = full_df.iloc[1:4]
 
+    print(f"\n==== {driver_abbr} RACE BREAKDOWN ====")
+    print("▶ Last 3 races:")
+    print(last_3[["Year", "Grand Prix", "Total Points"]])
+
+    print("\n▶ Previous 3 races (offset 1):")
+    print(prev_3[["Year", "Grand Prix", "Total Points"]])
+
+    print("\n▶ Last race only:")
+    print(last_race[["Year", "Grand Prix", "Total Points"]])
+
+
     last_3_avg = pd.DataFrame([{ 
         "Driver": driver_abbr,
         "Scope": "Last 3 Races Avg",
