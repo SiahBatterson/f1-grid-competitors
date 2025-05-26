@@ -33,6 +33,20 @@
         width: 120px;
         margin: 0 10px;
       }
+      .data-card {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+      }
+      .data-card h5 {
+        font-weight: bold;
+      }
+      .data-card table {
+        font-size: 0.95rem;
+      }
     </style>
   </head>
   <body class="container mt-5">
@@ -49,50 +63,90 @@
     <div class="stat-box text-center">
       <h3>💰 Current Value</h3>
       <p class="display-6 fw-semibold" style="color: {{ value_color }}">
-        {{ fantasy_value }} <span class="fs-5">({{ percent_display }})</span>
+        {{ fantasy_value }} <span class="fs-5">{{ percent_display }}</span>
       </p>
-
-      {% if previous_weighted is not none %}
+      {% if previous_value %}
       <p class="text-muted">Previously: {{ previous_value }}</p>
-
       {% endif %}
     </div>
 
-    <div class="row g-4">
-      {% for label, subset in [ ('📈 Last 3 Races', table.query("Scope == 'Last
-      3 Races Avg'")), ('📉 Previous 3 Races', table.query("Scope == 'Prev 3
-      Races Avg'")), ('📊 Season Average', table.query("Scope == 'Seasonal
-      Average'")), ('📍 Last Race', table[table['Scope'].isnull()].head(1)) ] %}
+    <div class="row">
       <div class="col-md-6">
-        <div class="card shadow-sm">
-          <div class="card-body text-center">
-            <h5 class="card-title">{{ label }}</h5>
-            <table class="table table-sm table-bordered text-center mb-0">
-              <thead>
-                <tr>
-                  {% for col in subset.columns if col not in ['Q/R/+O',
-                  'points_from_quali', 'points_from_race', 'points_from_gain']
-                  %}
-                  <th>{{ col }}</th>
-                  {% endfor %}
-                </tr>
-              </thead>
-              <tbody>
-                {% for _, row in subset.iterrows() %}
-                <tr>
-                  {% for col in subset.columns if col not in ['Q/R/+O',
-                  'points_from_quali', 'points_from_race', 'points_from_gain']
-                  %}
-                  <td>{{ row[col] }}</td>
-                  {% endfor %}
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
+        <div class="data-card">
+          <h5 class="text-center">📈 Last 3 Races</h5>
+          <table class="table table-bordered text-center">
+            <tr>
+              <th>Quali</th>
+              <th>Race</th>
+              <th>+Pos</th>
+              <th>Total Points</th>
+            </tr>
+            <tr>
+              <td>{{ last_3.Quali }}</td>
+              <td>{{ last_3.Race }}</td>
+              <td>{{ last_3["+Pos"] }}</td>
+              <td>{{ last_3["Total Points"] }}</td>
+            </tr>
+          </table>
         </div>
       </div>
-      {% endfor %}
+      <div class="col-md-6">
+        <div class="data-card">
+          <h5 class="text-center">📉 Previous 3 Races</h5>
+          <table class="table table-bordered text-center">
+            <tr>
+              <th>Quali</th>
+              <th>Race</th>
+              <th>+Pos</th>
+              <th>Total Points</th>
+            </tr>
+            <tr>
+              <td>{{ prev_3.Quali }}</td>
+              <td>{{ prev_3.Race }}</td>
+              <td>{{ prev_3["+Pos"] }}</td>
+              <td>{{ prev_3["Total Points"] }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="data-card">
+          <h5 class="text-center">📊 Season Average</h5>
+          <table class="table table-bordered text-center">
+            <tr>
+              <th>Quali</th>
+              <th>Race</th>
+              <th>+Pos</th>
+              <th>Total Points</th>
+            </tr>
+            <tr>
+              <td>{{ season_avg.Quali }}</td>
+              <td>{{ season_avg.Race }}</td>
+              <td>{{ season_avg["+Pos"] }}</td>
+              <td>{{ season_avg["Total Points"] }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="data-card">
+          <h5 class="text-center">📍 Last Race</h5>
+          <table class="table table-bordered text-center">
+            <tr>
+              <th>Quali</th>
+              <th>Race</th>
+              <th>+Pos</th>
+              <th>Total Points</th>
+            </tr>
+            <tr>
+              <td>{{ last_race.Quali }}</td>
+              <td>{{ last_race.Race }}</td>
+              <td>{{ last_race["+Pos"] }}</td>
+              <td>{{ last_race["Total Points"] }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
     </div>
 
     <div class="text-center mb-5">

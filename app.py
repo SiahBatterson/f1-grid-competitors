@@ -115,42 +115,46 @@ def generate_driver_rating_route():
         driver = request.form.get("driver", "").upper().strip()
         if not driver:
             return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
+
         try:
             df, weighted_avg, fantasy_value, previous_weighted_avg = generate_driver_rating(driver)
-            season_avg = df[df["Scope"].astype(str).str.strip() == "Seasonal Average"]
-            season_avg_pts = float(season_avg["Total Points"].values[0]) if not season_avg.empty else 0.0
-            fantasy_value_display = f"${round(fantasy_value):,}" if fantasy_value else "N/A"
-            previous_value = round((season_avg_pts * 0.9 + previous_weighted_avg * 0.1) * 250000) if previous_weighted_avg else None
-            previous_value_display = f"${previous_value:,}" if previous_value is not None else "N/A"
-            # After previous_value and fantasy_value are calculated:
-            if previous_weighted_avg:
-                previous_value = round((season_avg_pts * 0.9 + previous_weighted_avg * 0.1) * 250000)
-                percent_change = round(((fantasy_value - previous_value) / previous_value) * 100, 2)
-                is_higher = fantasy_value > previous_value
-                value_color = "green" if is_higher else "red"
-                percent_display = f"{'▲' if is_higher else '▼'} {abs(percent_change)}%"
-            else:
-                previous_value = None
-                percent_display = ""
-                value_color = "black"
 
+            season_avg_row = df[df["Scope"] == "Seasonal Average"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
+            last_3_row = df[df["Scope"] == "Last 3 Races Avg"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
+            prev_3_row = df[df["Scope"] == "Prev 3 Races Avg"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
+            last_race_row = df[df["Scope"].isna()].iloc[0:1].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
+
+            # Format for display
+            fantasy_value_display = f"${round(fantasy_value):,}" if fantasy_value else "N/A"
+            previous_value = round((season_avg_row["Total Points"].values[0] * 0.9 + previous_weighted_avg * 0.1) * 250000) if previous_weighted_avg else None
+            previous_value_display = f"${previous_value:,}" if previous_value else "N/A"
+
+            # Color and % change
+            if fantasy_value and previous_value:
+                value_color = "green" if fantasy_value > previous_value else "red"
+                percent_change = ((fantasy_value - previous_value) / previous_value) * 100
+                percent_display = f"({percent_change:+.1f}%)"
+            else:
+                value_color = "black"
+                percent_display = ""
 
             return render_template(
-            "driver_rating.html",
-            table=df,  # Pass the actual DataFrame, not HTML
-            driver=driver,
-            season_avg=season_avg_pts,
-            hype=weighted_avg,
-            fantasy_value=f"${round(fantasy_value):,}",
-            previous_value=f"${previous_value:,}" if previous_value else "N/A",
-            weighted_avg=weighted_avg,
-            previous_weighted=previous_weighted_avg,
-            value_color=value_color,
-            percent_display=percent_display
-        )
+                "driver_rating.html",
+                driver=driver,
+                fantasy_value=fantasy_value_display,
+                previous_value=previous_value_display,
+                value_color=value_color,
+                percent_display=percent_display,
+                season_avg=season_avg_row.to_dict(orient="records")[0],
+                last_3=last_3_row.to_dict(orient="records")[0],
+                prev_3=prev_3_row.to_dict(orient="records")[0],
+                last_race=last_race_row.to_dict(orient="records")[0]
+            )
         except Exception as e:
             return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
+
     return "<h2>Use the form to POST a driver abbreviation.</h2>"
+
 
 
 
