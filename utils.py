@@ -3,7 +3,6 @@ import pandas as pd
 import os
 import time
 
-
 CACHE_DIR = "/mnt/f1_cache"
 fastf1.Cache.enable_cache(CACHE_DIR)
 
@@ -74,8 +73,8 @@ def generate_driver_rating(driver_abbr, force=False):
             hype_val = None
 
         fantasy_value = None
-        if not last_3.empty and not seasonal.empty and hype_val:
-            avg = seasonal["Total Points"].values[0]
+        if not last_3.empty and not seasonal.empty and hype_val is not None:
+            avg = float(seasonal["Total Points"].values[0])
             fantasy_value = round(((avg * 0.9) + (hype_val * 0.1)) * 250000, 2)
 
         return df, hype_val, fantasy_value
@@ -131,6 +130,7 @@ def generate_driver_rating(driver_abbr, force=False):
     }])
 
     last_race = full_df.head(1)
+    weighted_total = None
     if not last_race.empty:
         weighted_total = round(
             (seasonal_avg["Total Points"].values[0] * 0.6) +
@@ -139,7 +139,7 @@ def generate_driver_rating(driver_abbr, force=False):
         )
         weighted_row = pd.DataFrame([{ 
             "Driver": driver_abbr, 
-            "weighted_avg": weighted_total 
+            "Weighted Avg": weighted_total 
         }])
 
         weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
@@ -152,17 +152,14 @@ def generate_driver_rating(driver_abbr, force=False):
         updated = updated.sort_values(by="Weighted Avg", ascending=False)
         updated.to_csv(weighted_path, index=False)
         print(f"📂 Updated weighted average for {driver_abbr}: {weighted_total}")
-    else:
-        weighted_total = None
 
     full_out = pd.concat([seasonal_avg, last_3, last_3_avg], ignore_index=True)
     full_out.to_csv(output_path, index=False)
 
     fantasy_value = None
-    if not last_race.empty:
-        hype = weighted_total
+    if weighted_total is not None:
         avg = seasonal_avg["Total Points"].values[0]
-        fantasy_value = round(((avg * 0.9) + (hype * 0.1)) * 250000, 2)
+        fantasy_value = round(((avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
 
     return full_out, weighted_total, fantasy_value
 

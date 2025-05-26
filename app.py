@@ -1,9 +1,8 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, Response
 import pandas as pd
 import os
 import fastf1
 import time
-from flask import Response
 
 from utils import (
     calculate_points,
@@ -17,34 +16,29 @@ app = Flask(__name__)
 
 CACHE_DIR = "/mnt/f1_cache"
 
-
 @app.route("/")
 def home():
     drivers = get_all_cached_drivers()
     driver_name_map = {
-    "VER": "Max Verstappen",
-    "HAM": "Lewis Hamilton",
-    "LEC": "Charles Leclerc",
-    "SAI": "Carlos Sainz",
-    "PER": "Sergio Perez",
-    "ALO": "Fernando Alonso",
-    "NOR": "Lando Norris",
-    "PIA": "Oscar Piastri",
-    "RUS": "George Russell",
-    "TSU": "Yuki Tsunoda",
-    "ZHO": "Zhou Guanyu",
-    "ALB": "Alex Albon",
-    "SAR": "Logan Sargeant",
-    "HUL": "Nico Hulkenberg",
-    "MAG": "Kevin Magnussen",
-    "RIC": "Daniel Ricciardo",
-    "BOT": "Valtteri Bottas",
-    "GAS": "Pierre Gasly",
-    "OCO": "Esteban Ocon"
-    # Add any others as needed
-}
-    top_drivers = []
+        "VER": "Max Verstappen", "HAM": "Lewis Hamilton", "LEC": "Charles Leclerc",
+        "SAI": "Carlos Sainz", "PER": "Sergio Perez", "ALO": "Fernando Alonso",
+        "NOR": "Lando Norris", "PIA": "Oscar Piastri", "RUS": "George Russell",
+        "TSU": "Yuki Tsunoda", "ZHO": "Zhou Guanyu", "ALB": "Alex Albon",
+        "SAR": "Logan Sargeant", "HUL": "Nico Hulkenberg", "MAG": "Kevin Magnussen",
+        "RIC": "Daniel Ricciardo", "BOT": "Valtteri Bottas", "GAS": "Pierre Gasly",
+        "OCO": "Esteban Ocon"
+    }
 
+    # Only show drivers with results from 2025
+    try:
+        df_2025 = pd.read_csv(os.path.join(CACHE_DIR, "averages_2025.csv"))
+        drivers_2025 = set(df_2025["Driver"].dropna().unique())
+        drivers = [d for d in drivers if d in drivers_2025]
+    except Exception as e:
+        print(f"⚠️ Couldn't load 2025 driver list: {e}")
+        drivers = []
+
+    top_drivers = []
     for d in drivers:
         try:
             df, hype, value = generate_driver_rating(d)
@@ -53,8 +47,9 @@ def home():
                 if not last_3_avg.empty:
                     top_drivers.append({
                         "driver": d,
-                        "points": last_3_avg["Total Points"].values[0],
-                        "value": f"${value:,.0f}" if value else "N/A"
+                        "points": float(last_3_avg["Total Points"].values[0]),
+                        "hype": round(float(hype), 2) if hype else 0,
+                        "value": f"${round(float(value)):,.0f}" if value else "N/A"
                     })
         except Exception as e:
             print(f"❌ Failed to process driver {d}: {e}")
@@ -69,26 +64,7 @@ def home():
 def generate_all_driver_ratings_route():
     print("🚀 POST /generate_all_driver_ratings triggered")
     generate_all_driver_ratings()
-    drivers = get_all_cached_drivers()
-
-    top_drivers = []
-    for d in drivers:
-        try:
-            df, hype, value = generate_driver_rating(d)
-            if "Scope" in df.columns:
-                last_3_avg = df[df["Scope"].astype(str).str.strip() == "Last 3 Races Avg"]
-                if not last_3_avg.empty:
-                    top_drivers.append({
-                        "driver": d,
-                        "points": last_3_avg["Total Points"].values[0],
-                        "value": f"${value:,.0f}" if value else "N/A"
-                    })
-        except Exception as e:
-            print(f"❌ Failed to process driver {d}: {e}")
-            continue
-
-    top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
-    return render_template("home.html", drivers=drivers, top_drivers=top_drivers)
+    return "<h2>✅ Driver ratings generated.</h2><a href='/'>⬅ Back</a>"
 
 
 @app.route("/clear_driver_ratings", methods=["POST"])
@@ -127,20 +103,20 @@ def generate_driver_rating_route():
             return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
         try:
             df, hype, value = generate_driver_rating(driver)
-
-            # Extract season average if available
             season_avg = df[df["Scope"].astype(str).str.strip() == "Seasonal Average"]
-            season_avg_pts = season_avg["Total Points"].values[0] if not season_avg.empty else 0.0
+            season_avg_pts = float(season_avg["Total Points"].values[0]) if not season_avg.empty else 0.0
+            hype = float(hype) if hype is not None else 0.0
+            value = float(value) if value is not None else 0.0
 
             return render_template(
-            "driver_rating.html",
-            table=df.to_html(classes="table table-bordered text-center", index=False),
-            driver=driver,
-            season_avg=season_avg_pts,
-            hype=hype,
-            value=value,
-            weighted_avg=hype  # <== add this
-        )
+                "driver_rating.html",
+                table=df.to_html(classes="table table-bordered text-center", index=False),
+                driver=driver,
+                season_avg=season_avg_pts,
+                hype=hype,
+                value=value,
+                weighted_avg=hype
+            )
         except Exception as e:
             return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
     return "<h2>Use the form to POST a driver abbreviation.</h2>"
@@ -192,12 +168,6 @@ def season():
 
     season_df = pd.concat(all_results)
     return render_template("season.html", table=season_df.to_html(classes="table table-bordered text-center", index=False))
-
-
-@app.route("/test_race")
-def test_race():
-    df = calculate_points(2023, "Australian Grand Prix")
-    return df.to_html() if not df.empty else "⚠️ No data"
 
 
 @app.route("/averages")
