@@ -250,7 +250,23 @@ def get_last_processed_race():
     latest_years = sorted([2025, 2024, 2023, 2022, 2021], reverse=True)
 
     for year in latest_years:
-        file_path = os.path.join(CACHE_DIR, f"{year} - LastProcessedRace.txt")
-        if os.path.exists(file_path):
-            with open(file_path, "r") as f:
-                return f.read().strip()
+        schedule_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
+        if not os.path.exists(schedule_path):
+            continue
+
+        try:
+            df = pd.read_csv(schedule_path)
+            races = df["Grand Prix"].dropna().unique() if "Grand Prix" in df.columns else []
+
+            # Reverse so we check the latest races first
+            for race_name in reversed(races):
+                cache_path = os.path.join(CACHE_DIR, f"{year} - {race_name}.csv")
+                if os.path.exists(cache_path):
+                    df_race = pd.read_csv(cache_path)
+                    if not df_race.empty and "Total Points" in df_race.columns:
+                        return f"{year} - {race_name}"
+        except Exception as e:
+            print(f"⚠️ Failed to read races for {year}: {e}")
+            continue
+
+    return "No valid race found"
