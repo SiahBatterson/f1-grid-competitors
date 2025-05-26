@@ -348,6 +348,33 @@ def delete_averages():
 def profile():
     drivers = current_user.drivers.split(",") if current_user.drivers else []
     driver_cards = []
+    driver_info = {
+    "VER": {"name": "Max Verstappen", "image": "Max.webp"},
+    "TSU": {"name": "Yuki Tsunoda", "image": "Yuki.webp"},
+    "LEC": {"name": "Charles Leclerc", "image": "Charles.webp"},
+    "HAM": {"name": "Lewis Hamilton", "image": "Lewis.webp"},
+    "RUS": {"name": "George Russell", "image": "FuckFace.webp"},
+    "ANT": {"name": "Andrea Kimi Antonelli", "image": "Kimi.webp"},
+    "NOR": {"name": "Lando Norris", "image": "Lando.webp"},
+    "PIA": {"name": "Oscar Piastri", "image": "Oscar.webp"},
+    "ALO": {"name": "Fernando Alonso", "image": "Fernando.webp"},
+    "STR": {"name": "Lance Stroll", "image": "Lance.webp"},
+    "GAS": {"name": "Pierre Gasly", "image": "Pierre.webp"},
+    "COL": {"name": "Franco Colapinto", "image": "placeholder.webp"},
+    "OCO": {"name": "Esteban Ocon", "image": "Ocon.webp"},
+    "BEA": {"name": "Oliver Bearman", "image": "placeholder.webp"},
+    "ALB": {"name": "Alex Albon", "image": "Alex.webp"},
+    "SAI": {"name": "Carlos Sainz", "image": "Carlos.webp"},
+    "HUL": {"name": "Nico Hülkenberg", "image": "Nico.webp"},
+    "BOR": {"name": "Gabriel Bortoleto", "image": "Gabe.webp"},
+    "HAD": {"name": "Isack Hadjar", "image": "Isack.webp"},
+    "LAW": {"name": "Liam Lawson", "image": "placeholder.webp"},
+    "DOO": {"name": "Jack Doohan", "image": "Jack.webp"},
+    "SAR": {"name": "Logan Sargeant", "image": "Logan.webp"},
+    "BOT": {"name": "Valtteri Bottas", "image": "Valtteri.webp"},
+    "ZHO": {"name": "Guanyu Zhou", "image": "Guanyu.webp"}
+}
+
 
     for code in drivers:
         try:

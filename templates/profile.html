@@ -25,8 +25,8 @@
       <h4>💰 Current Balance:</h4>
       <h2>${{ "{:,.0f}".format(user.balance) }}</h2>
       <p class="{{ diff_class }}">
-        {% if diff >= 0 %} +${{ "{:,.0f}".format(diff) }} above goal {% else %}
-        -${{ "{:,.0f}".format(diff | abs) }} below goal {% endif %}
+        {% if diff >= 0 %} +${{ "{:,.0f}".format(diff) }}{% else %} -${{
+        "{:,.0f}".format(diff | abs) }}{% endif %}
       </p>
     </div>
 
