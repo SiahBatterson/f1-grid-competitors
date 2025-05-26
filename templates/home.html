@@ -17,11 +17,6 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
         margin-bottom: 2rem;
       }
-      .section h2 {
-        font-size: 1.5rem;
-        margin-bottom: 1rem;
-        font-weight: 600;
-      }
       .card-title {
         font-size: 1.25rem;
         font-weight: bold;
@@ -30,30 +25,40 @@
         font-size: 1.25rem;
         color: #198754;
       }
-      .form-inline .form-select,
-      .form-inline .btn {
-        vertical-align: middle;
-      }
     </style>
   </head>
   <body class="container mt-5">
-
-    <div class="text-center mb-5">
-      <h1 class="display-4 fw-bold">🏎️ F1 Fantasy Leaderboard</h1>
-      <p class="text-muted">Track performance across the season with real stats and custom scoring.</p>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="display-4 fw-bold">🏎️ F1 Fantasy Leaderboard</h1>
+        <p class="text-muted">
+          Track performance across the season with real stats and custom
+          scoring.
+        </p>
+      </div>
+      <button class="btn btn-outline-secondary">🔒 Login</button>
     </div>
 
     {% if top_drivers %}
-    <div class="section text-center bg-light border border-dark">
-      <h2 class="fw-bold mb-4">🔥 Top 3 Drivers (Last 3-Race Avg)</h2>
-      <div class="row justify-content-center">
+    <div class="section">
+      <h2 class="fw-bold mb-4">🔥 Top 3 Drivers</h2>
+      <div class="row">
         {% for d in top_drivers %}
         <div class="col-md-4">
-          <div class="card mb-3 shadow-sm">
-            <div class="card-body">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
               <h5 class="card-title">{{ d.driver }}</h5>
               <p class="card-text">{{ d.points }} pts</p>
               <p class="card-text text-muted">💰 {{ d.value }}</p>
+              <form
+                method="POST"
+                action="{{ url_for('generate_driver_rating_route') }}"
+              >
+                <input type="hidden" name="driver" value="{{ d.driver }}" />
+                <button type="submit" class="btn btn-outline-primary btn-sm">
+                  🔍 View
+                </button>
+              </form>
             </div>
           </div>
         </div>
@@ -62,57 +67,50 @@
     </div>
     {% endif %}
 
-    <div class="section text-center">
-      <form method="POST" action="{{ url_for('generate_driver_rating_route') }}" class="d-inline me-2">
-        <div class="input-group">
-          <select name="driver" class="form-select" required>
-            <option disabled selected value="">Select Driver</option>
-            {% for abbr in drivers %}
-            <option value="{{ abbr }}">{{ driver_name_map.get(abbr, abbr) }}</option>
-            {% endfor %}
-          </select>
-          <button class="btn btn-primary" type="submit">🔍 View Driver</button>
+    <div class="section">
+      <h2 class="fw-bold mb-4">📋 All Drivers</h2>
+      <div class="row row-cols-1 row-cols-md-3 g-3">
+        {% for d in drivers %} {% if d not in [td.driver for td in top_drivers]
+        %}
+        <div class="col">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+              <h5 class="card-title">{{ driver_name_map.get(d, d) }}</h5>
+              <form
+                method="POST"
+                action="{{ url_for('generate_driver_rating_route') }}"
+              >
+                <input type="hidden" name="driver" value="{{ d }}" />
+                <button type="submit" class="btn btn-outline-primary btn-sm">
+                  🔍 View
+                </button>
+              </form>
+            </div>
+          </div>
         </div>
-      </form>
-      
-      
-      <a href="{{ url_for('averages') }}" class="btn btn-secondary btn-lg me-2">📊 Driver Averages</a>
-      <a href="{{ url_for('weighted') }}" class="btn btn-dark btn-lg">🔥 Hype Ratings</a>
-    </div>
-
-    <div class="section">
-      <h2>📦 Preload Season Data</h2>
-      <form class="form-inline" method="POST" action="{{ url_for('preload') }}">
-        <select name="year" id="year" class="form-select w-auto d-inline me-2">
-          {% for y in [2021, 2022, 2023, 2024, 2025] %}
-          <option value="{{ y }}" {% if y == 2023 %}selected{% endif %}>{{ y }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="btn btn-warning">⚡ Preload</button>
-      </form>
-    </div>
-
-    <div class="section">
-      <h2>📈 Generate Individual Driver Rating</h2>
-      <form method="POST" action="{{ url_for('generate_driver_rating_route') }}" class="d-inline">
-        <select name="driver" id="driver" class="form-select w-auto d-inline me-2" required>
-          {% for d in drivers %}
-          <option value="{{ d }}">{{ d }}</option>
-          {% endfor %}
-        </select>
-        <button type="submit" class="btn btn-success">Generate</button>
-      </form>
+        {% endif %} {% endfor %}
+      </div>
     </div>
 
     <div class="section text-center">
-      <form method="POST" action="{{ url_for('clear_driver_ratings') }}" class="d-inline">
-        <button type="submit" class="btn btn-danger">🗑️ Clear All Driver Ratings</button>
+      <form
+        method="POST"
+        action="{{ url_for('clear_driver_ratings') }}"
+        class="d-inline me-3"
+      >
+        <button type="submit" class="btn btn-danger">
+          🗑️ Clear All Driver Ratings
+        </button>
       </form>
-      <form method="POST" action="{{ url_for('generate_all_driver_ratings_route') }}">
-        <button type="submit" class="btn btn-dark">🛠️ Generate All Driver Ratings</button>
+      <form
+        method="POST"
+        action="{{ url_for('generate_all_driver_ratings_route') }}"
+        class="d-inline"
+      >
+        <button type="submit" class="btn btn-dark">
+          🛠️ Generate All Driver Ratings
+        </button>
       </form>
-      
     </div>
-
   </body>
 </html>

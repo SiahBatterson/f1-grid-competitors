@@ -138,7 +138,7 @@ def generate_driver_rating(driver_abbr, force=False):
         )
         weighted_row = pd.DataFrame([{ 
             "Driver": driver_abbr, 
-            "Weighted Avg": weighted_total 
+            "weighted_avg": weighted_total 
         }])
 
         weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
