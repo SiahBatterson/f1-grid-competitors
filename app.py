@@ -438,16 +438,16 @@ def get_driver_price(driver_code):
         print(f"⚠️ Could not get price for {driver_code}: {e}")
         return 0
 
-@app.before_first_request
-def initialize_database():
-    db_path = "/mnt/f1_cache/users.db"
-    if not os.path.exists(db_path):
-        print("📦 Creating users.db and tables...")
-        with app.app_context():
-            db.create_all()
-        print("✅ User table created.")
-    else:
-        print("ℹ️ users.db already exists.")
+import os
+
+db_path = "/mnt/f1_cache/users.db"
+if not os.path.exists(db_path):
+    print("📦 Creating users.db and tables...")
+    with app.app_context():
+        db.create_all()
+    print("✅ User table created.")
+else:
+    print("ℹ️ users.db already exists.")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
