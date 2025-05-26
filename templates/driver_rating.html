@@ -49,8 +49,8 @@
     <div class="stat-box text-center">
       <h3>💰 Current Value</h3>
       <p class="display-6 fw-semibold">
-        {{ (season_avg * 0.9 + weighted_avg * 0.1) * 250000 | round(2) | int |
-        string | replace(",", "") }}$
+        {{ ((season_avg | float) * 0.9 + (weighted_avg | float) * 0.1) * 250000
+        | round(2) | int | string | replace(",", "") }}$
       </p>
     </div>
 
