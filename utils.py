@@ -159,7 +159,14 @@ def generate_driver_rating(driver_abbr, force=False):
     fantasy_value = None
     if weighted_total is not None:
         avg = seasonal_avg["Total Points"].values[0]
-        fantasy_value = round(((avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
+        fantasy_value = None
+        if weighted_total is not None:
+            try:
+                avg = float(seasonal_avg["Total Points"].values[0])
+                fantasy_value = round(((avg * 0.9) + (float(weighted_total) * 0.1)) * 250000, 2)
+            except Exception as e:
+                print(f"❌ Error calculating fantasy value for {driver_abbr}: {e}")
+                fantasy_value = None
 
     return full_out, weighted_total, fantasy_value
 
@@ -185,7 +192,7 @@ def get_all_cached_drivers():
         ])
 
     return sorted(drivers)
-
+ 
 def generate_all_driver_ratings():
     drivers = get_all_cached_drivers()
     print(f"🔁 Generating full driver rating files for {len(drivers)} drivers...")
