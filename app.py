@@ -424,7 +424,7 @@ def profile():
 @app.route("/admin/users")
 @login_required
 def admin_users():
-    if current_user.username != "admin":  # or use a proper role system later
+    if current_user.username != "admin" or "siaaah":  # or use a proper role system later
         return "⛔ Access Denied", 403
 
     all_users = User.query.all()
@@ -458,7 +458,7 @@ def login():
         return "❌ Invalid login"
     return render_template("login.html")
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()
