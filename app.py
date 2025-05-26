@@ -428,10 +428,7 @@ def profile():
 @app.route("/admin/users")
 @login_required
 def admin_users():
-    if current_user.username == "siaaah":
-        all_users = User.query.all()
-        return render_template("admin_users.html", users=all_users)
-    if current_user.username != "admin" or "siaaah":  # or use a proper role system later
+    if current_user.username not in {"admin", "siaaah"}:
         return "⛔ Access Denied", 403
 
     all_users = User.query.all()
