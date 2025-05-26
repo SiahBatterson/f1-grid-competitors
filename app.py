@@ -348,51 +348,69 @@ def delete_averages():
 def profile():
     drivers = current_user.drivers.split(",") if current_user.drivers else []
     driver_cards = []
-    driver_info = {
-    "VER": {"name": "Max Verstappen", "image": "Max.webp"},
-    "TSU": {"name": "Yuki Tsunoda", "image": "Yuki.webp"},
-    "LEC": {"name": "Charles Leclerc", "image": "Charles.webp"},
-    "HAM": {"name": "Lewis Hamilton", "image": "Lewis.webp"},
-    "RUS": {"name": "George Russell", "image": "FuckFace.webp"},
-    "ANT": {"name": "Andrea Kimi Antonelli", "image": "Kimi.webp"},
-    "NOR": {"name": "Lando Norris", "image": "Lando.webp"},
-    "PIA": {"name": "Oscar Piastri", "image": "Oscar.webp"},
-    "ALO": {"name": "Fernando Alonso", "image": "Fernando.webp"},
-    "STR": {"name": "Lance Stroll", "image": "Lance.webp"},
-    "GAS": {"name": "Pierre Gasly", "image": "Pierre.webp"},
-    "COL": {"name": "Franco Colapinto", "image": "placeholder.webp"},
-    "OCO": {"name": "Esteban Ocon", "image": "Ocon.webp"},
-    "BEA": {"name": "Oliver Bearman", "image": "placeholder.webp"},
-    "ALB": {"name": "Alex Albon", "image": "Alex.webp"},
-    "SAI": {"name": "Carlos Sainz", "image": "Carlos.webp"},
-    "HUL": {"name": "Nico Hülkenberg", "image": "Nico.webp"},
-    "BOR": {"name": "Gabriel Bortoleto", "image": "Gabe.webp"},
-    "HAD": {"name": "Isack Hadjar", "image": "Isack.webp"},
-    "LAW": {"name": "Liam Lawson", "image": "placeholder.webp"},
-    "DOO": {"name": "Jack Doohan", "image": "Jack.webp"},
-    "SAR": {"name": "Logan Sargeant", "image": "Logan.webp"},
-    "BOT": {"name": "Valtteri Bottas", "image": "Valtteri.webp"},
-    "ZHO": {"name": "Guanyu Zhou", "image": "Guanyu.webp"}
-}
 
+    driver_info = {
+        "VER": {"name": "Max Verstappen", "image": "Max.webp"},
+        "TSU": {"name": "Yuki Tsunoda", "image": "Yuki.webp"},
+        "LEC": {"name": "Charles Leclerc", "image": "Charles.webp"},
+        "HAM": {"name": "Lewis Hamilton", "image": "Lewis.webp"},
+        "RUS": {"name": "George Russell", "image": "FuckFace.webp"},
+        "ANT": {"name": "Andrea Kimi Antonelli", "image": "Kimi.webp"},
+        "NOR": {"name": "Lando Norris", "image": "Lando.webp"},
+        "PIA": {"name": "Oscar Piastri", "image": "Oscar.webp"},
+        "ALO": {"name": "Fernando Alonso", "image": "Fernando.webp"},
+        "STR": {"name": "Lance Stroll", "image": "Lance.webp"},
+        "GAS": {"name": "Pierre Gasly", "image": "Pierre.webp"},
+        "COL": {"name": "Franco Colapinto", "image": "placeholder.webp"},
+        "OCO": {"name": "Esteban Ocon", "image": "Ocon.webp"},
+        "BEA": {"name": "Oliver Bearman", "image": "placeholder.webp"},
+        "ALB": {"name": "Alex Albon", "image": "Alex.webp"},
+        "SAI": {"name": "Carlos Sainz", "image": "Carlos.webp"},
+        "HUL": {"name": "Nico Hülkenberg", "image": "Nico.webp"},
+        "BOR": {"name": "Gabriel Bortoleto", "image": "Gabe.webp"},
+        "HAD": {"name": "Isack Hadjar", "image": "Isack.webp"},
+        "LAW": {"name": "Liam Lawson", "image": "placeholder.webp"},
+        "DOO": {"name": "Jack Doohan", "image": "Jack.webp"},
+        "SAR": {"name": "Logan Sargeant", "image": "Logan.webp"},
+        "BOT": {"name": "Valtteri Bottas", "image": "Valtteri.webp"},
+        "ZHO": {"name": "Guanyu Zhou", "image": "Guanyu.webp"}
+    }
+
+    total_driver_value = 0
 
     for code in drivers:
         try:
             df, hype, value, _ = generate_driver_rating(code)
             img_filename = driver_info.get(code, {}).get("image", "placeholder.webp")
             full_name = driver_info.get(code, {}).get("name", code)
+            driver_img_url = url_for("static", filename=f"driver_images/{img_filename}")
+            total_driver_value += value or 0
             driver_cards.append({
                 "code": code,
                 "name": full_name,
-                "image": img_filename,
+                "image": driver_img_url,
                 "hype": hype,
                 "value": value
             })
-        except:
+        except Exception as e:
+            print(f"❌ Failed to load driver {code}: {e}")
             continue
 
-    balance_delta = current_user.balance - 15000000
-    return render_template("profile.html", user=current_user, driver_cards=driver_cards, balance_delta=balance_delta)
+    balance = current_user.balance
+    goal = 15000000
+    balance_delta = balance - goal
+    net_worth = balance + total_driver_value
+    net_worth_delta = net_worth - goal
+
+    return render_template(
+        "profile.html",
+        user=current_user,
+        driver_cards=driver_cards,
+        balance_delta=balance_delta,
+        net_worth=net_worth,
+        net_worth_delta=net_worth_delta
+    )
+
 
 @app.route("/admin/users")
 @login_required

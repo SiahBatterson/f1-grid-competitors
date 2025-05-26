@@ -18,16 +18,22 @@
   <body class="container py-5">
     <h1 class="mb-4 text-center">👤 {{ user.username }}'s Profile</h1>
 
-    <!-- 💰 Balance Section -->
-    {% set goal_balance = 15000000 %} {% set diff = user.balance - goal_balance
-    %} {% set diff_class = 'text-success' if diff > 0 else 'text-danger' %}
+    <!-- 📊 Net Worth -->
+    {% set goal = 15000000 %} {% set net_class = 'text-success' if net_worth >=
+    goal else 'text-danger' %}
+    <div class="text-center mb-4">
+      <h4>📊 Net Worth (Drivers + Balance)</h4>
+      <h2 class="{{ net_class }}">
+        ${{ "{:,.0f}".format(net_worth) }} {% if net_worth >= goal %} +${{
+        "{:,.0f}".format(net_worth - goal) }} {% else %} -${{
+        "{:,.0f}".format((goal - net_worth)) }} {% endif %}
+      </h2>
+    </div>
+
+    <!-- 💰 Balance -->
     <div class="text-center mb-5">
       <h4>💰 Current Balance:</h4>
       <h2>${{ "{:,.0f}".format(user.balance) }}</h2>
-      <p class="{{ diff_class }}">
-        {% if diff >= 0 %} +${{ "{:,.0f}".format(diff) }}{% else %} -${{
-        "{:,.0f}".format(diff | abs) }}{% endif %}
-      </p>
     </div>
 
     <!-- 🏎️ Driver Cards -->
@@ -38,7 +44,7 @@
       <div class="col">
         <div class="card h-100 driver-card shadow-sm">
           <img
-            src="{{ url_for('static', filename='driver_images/' ~ card.image) }}"
+            src="{{ card.image }}"
             alt="{{ card.name }}"
             onerror="this.src='https://via.placeholder.com/300x160?text={{ card.code }}'"
           />
@@ -73,12 +79,16 @@
     <hr class="my-5" />
     <h4 class="text-center mb-3">🚀 Available Boosts</h4>
     <div class="row row-cols-1 row-cols-md-3 g-3 text-center">
+      {% for boost in ['qualifying', 'race', 'pass'] %}
       <div class="col">
         <div class="card h-100 shadow-sm">
           <div class="card-body">
-            <h5 class="card-title">⚡ Qualifying Boost</h5>
+            <h5 class="card-title">
+              {% if boost == 'qualifying' %}⚡ Qualifying Boost {% elif boost ==
+              'race' %}🏁 Race Boost {% else %}🚀 Pass Boost{% endif %}
+            </h5>
             <p class="text-muted mb-3">Cost: $1,000,000</p>
-            <form method="POST" action="/boost/qualifying">
+            <form method="POST" action="/boost/{{ boost }}">
               <button class="btn btn-outline-primary w-100">
                 Activate (not implemented)
               </button>
@@ -86,32 +96,7 @@
           </div>
         </div>
       </div>
-      <div class="col">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title">🏁 Race Boost</h5>
-            <p class="text-muted mb-3">Cost: $1,000,000</p>
-            <form method="POST" action="/boost/race">
-              <button class="btn btn-outline-primary w-100">
-                Activate (not implemented)
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-      <div class="col">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title">🚀 Pass Boost</h5>
-            <p class="text-muted mb-3">Cost: $1,000,000</p>
-            <form method="POST" action="/boost/pass">
-              <button class="btn btn-outline-primary w-100">
-                Activate (not implemented)
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
+      {% endfor %}
     </div>
 
     <div class="text-center mt-5">
