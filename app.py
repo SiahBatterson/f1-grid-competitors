@@ -112,7 +112,7 @@ def generate_driver_rating_route():
                 driver=driver,
                 season_avg=season_avg_pts,
                 hype=weighted_avg,
-                value=fantasy_value_display,
+                fantasy_value=fantasy_value_display,
                 weighted_avg=weighted_avg,
                 previous_weighted=previous_weighted_avg
             )
