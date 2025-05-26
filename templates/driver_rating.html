@@ -48,7 +48,17 @@
 
     <div class="stat-box text-center">
       <h3>💰 Current Value</h3>
-      <p class="display-6 fw-semibold">{{ fantasy_value }}</p>
+      <p class="display-6 fw-semibold">
+        ${{ fantasy_value | int | string | replace(",", "") }}
+      </p>
+
+      {% if previous_weighted is not none %}
+      <p class="text-muted">
+        Previously: ${{ previous_weighted | float | multiply(0.1) |
+        add(season_avg * 0.9) | multiply(250000) | round(2) | int | string |
+        replace(",", "") }}
+      </p>
+      {% endif %}
     </div>
 
     <div class="stat-box">
