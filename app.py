@@ -347,7 +347,8 @@ def delete_averages():
 def signup():
     if request.method == "POST":
         username = request.form["username"]
-        password = generate_password_hash(request.form["password"], method='sha256')
+        password = generate_password_hash(request.form["password"], method='pbkdf2:sha256')
+
 
         if User.query.filter_by(username=username).first():
             return "❌ Username already exists"
