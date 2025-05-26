@@ -70,8 +70,8 @@
     <div class="section">
       <h2 class="fw-bold mb-4">📋 All Drivers</h2>
       <div class="row row-cols-1 row-cols-md-3 g-3">
-        {% for d in drivers %} {% if d not in [td.driver for td in top_drivers]
-        %}
+        {% set top_driver_ids = top_drivers | map(attribute='driver') | list %}
+        {% for d in drivers %} {% if d not in top_driver_ids %}
         <div class="col">
           <div class="card h-100 shadow-sm">
             <div class="card-body text-center">
