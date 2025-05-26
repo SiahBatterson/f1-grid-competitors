@@ -138,7 +138,7 @@ def generate_driver_rating_route():
         "HUL": "Nico_Hulkenberg_27.png"
     }
         driver = request.form.get("driver", "").upper().strip()
-        base_img_url = "https://raw.githubusercontent.com/toUpperCase78/formula1-datasets/main/F1%202025%20Season%20Drivers/"
+        base_img_url = "https://github.com/toUpperCase78/formula1-datasets/blob/master/F1%202025%20Season%20Drivers/"
         img_filename = driver_image_map.get(driver, "placeholder.png")
         driver_img_url = f"{base_img_url}{img_filename}"
         if not driver:
