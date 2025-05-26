@@ -265,6 +265,36 @@ def driver_season_view(driver):
     df = df.sort_values(by=["Year", "Grand Prix"], ascending=[False, False])
     return render_template("season.html", table=df.to_html(classes="table table-bordered text-center", index=False))
 
+@app.route("/update_latest_race", methods=["POST"])
+def update_latest_race():
+    from datetime import datetime
+    current_year = datetime.now().year
+    schedule = fastf1.get_event_schedule(current_year)
+    past_races = schedule[schedule['EventDate'] < pd.Timestamp.now()]
+
+    if past_races.empty:
+        return "<h2>⚠️ No races have occurred yet this season.</h2><a href='/'>⬅ Back</a>"
+
+    latest_race = past_races.iloc[-1]
+    race_name = latest_race["EventName"]
+
+    print(f"🔄 Updating with latest race: {race_name}")
+    df = calculate_points(current_year, race_name)
+
+    if df.empty:
+        return f"<h2>⚠️ Failed to calculate points for {race_name}.</h2><a href='/'>⬅ Back</a>"
+
+    # Trigger update of affected drivers only
+    for driver in df["Driver"].unique():
+        try:
+            generate_driver_rating(driver, force=True)
+            print(f"✅ Updated rating for {driver}")
+        except Exception as e:
+            print(f"❌ Failed to update {driver}: {e}")
+
+    return f"<h2>✅ Latest race ({race_name}) processed and ratings updated.</h2><a href='/'>⬅ Back</a>"
+
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
