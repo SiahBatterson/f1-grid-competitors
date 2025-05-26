@@ -9,6 +9,9 @@ fastf1.Cache.enable_cache(CACHE_DIR)
 def calculate_points(year, gp_name):
     cache_path = os.path.join(CACHE_DIR, f"{year} - {gp_name}.csv")
     if os.path.exists(cache_path):
+        last_race_path = os.path.join(CACHE_DIR, f"{year} - LastProcessedRace.txt")
+        with open(last_race_path, "w") as f:
+            f.write(f"{year} - {gp_name}")
         return pd.read_csv(cache_path)
 
     try:

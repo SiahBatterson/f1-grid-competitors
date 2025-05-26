@@ -12,6 +12,31 @@ from utils import (
     get_last_processed_race
 )
 
+driver_image_map = {
+    "ALB": "Alexander_Albon_23.png",
+    "SAI": "Carlos_Sainz_55.png",
+    "LEC": "Charles_Leclerc_16.png",
+    "OCO": "Esteban_Ocon_31.png",
+    "ALO": "Fernando_Alonso_14.png",
+    "BOR": "Gabriel_Bortoletto_5.png",
+    "RUS": "George_Russell_63.png",
+    "HAD": "Isack_Hadjar_6.png",
+    "DOO": "Jack_Doohan_7.png",
+    "ANT": "Kimi_Antonelli_12.png",
+    "STR": "Lance_Stroll_18.png",
+    "NOR": "Lando_Norris_4.png",
+    "HAM": "Lewis_Hamilton_44.png",
+    "PIA": "Oscar_Piastri_81.png",
+    "GAS": "Pierre_Gasly_10.png",
+    "SAR": "Logan_Sargeant_2.png",
+    "VER": "Max_Verstappen_1.png",
+    "ZHO": "Guanyu_Zhou_24.png",
+    "TSU": "Yuki_Tsunoda_22.png",
+    "BOT": "Valtteri_Bottas_77.png",
+    "HUL": "Nico_Hulkenberg_27.png"
+}
+
+
 fastf1.Cache.enable_cache("/mnt/f1_cache")
 app = Flask(__name__)
 
@@ -112,6 +137,10 @@ def weighted():
 @app.route("/generate_driver_rating", methods=["GET", "POST"])
 def generate_driver_rating_route():
     if request.method == "POST":
+        base_img_url = "https://raw.githubusercontent.com/toUpperCase78/formula1-datasets/main/F1%202025%20Season%20Drivers/"
+        img_filename = driver_image_map.get(driver, "placeholder.png")
+        driver_img_url = f"{base_img_url}{img_filename}"
+
         driver = request.form.get("driver", "").upper().strip()
         if not driver:
             return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
@@ -141,6 +170,7 @@ def generate_driver_rating_route():
             return render_template(
                 "driver_rating.html",
                 driver=driver,
+                driver_img_url=driver_img_url,
                 fantasy_value=fantasy_value_display,
                 previous_value=previous_value_display,
                 value_color=value_color,
