@@ -6,27 +6,113 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <style>
+      .driver-card img {
+        object-fit: cover;
+        width: 100%;
+        height: 160px;
+        border-radius: 10px 10px 0 0;
+      }
+    </style>
   </head>
-  <body class="container mt-5">
-    <h1 class="mb-4">👤 {{ user.username }}'s Profile</h1>
+  <body class="container py-5">
+    <h1 class="mb-4 text-center">👤 {{ user.username }}'s Profile</h1>
 
-    <div class="mb-3">
-      <strong>💰 Balance:</strong> ${{ "{:,.0f}".format(user.balance) }}
+    <!-- 💰 Balance Section -->
+    {% set goal_balance = 15000000 %} {% set diff = user.balance - goal_balance
+    %} {% set diff_class = 'text-success' if diff > 0 else 'text-danger' %}
+    <div class="text-center mb-5">
+      <h4>💰 Current Balance:</h4>
+      <h2>${{ "{:,.0f}".format(user.balance) }}</h2>
+      <p class="{{ diff_class }}">
+        {% if diff >= 0 %} +${{ "{:,.0f}".format(diff) }} above goal {% else %}
+        -${{ "{:,.0f}".format(diff | abs) }} below goal {% endif %}
+      </p>
     </div>
 
-    <div class="mb-4">
-      <strong>🏎️ Your Drivers:</strong>
-      {% if drivers %}
-      <ul>
-        {% for d in drivers %}
-        <li>{{ d }}</li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p>No drivers selected yet.</p>
-      {% endif %}
+    <!-- 🏎️ Driver Cards -->
+    <h4 class="mb-3">🏎️ Your Drivers</h4>
+    {% if drivers %}
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      {% for d in drivers %} {% set df, hype, value, _ =
+      generate_driver_rating(d) %} {% set img_path = url_for('static',
+      filename='driver_images/' ~ d ~ '.webp') %}
+      <div class="col">
+        <div class="card h-100 driver-card shadow-sm">
+          <img
+            src="{{ img_path }}"
+            alt="{{ d }}"
+            onerror="this.src='https://via.placeholder.com/300x160?text={{ d }}'"
+          />
+          <div class="card-body text-center">
+            <h5 class="card-title">{{ d }}</h5>
+            <p class="mb-1">
+              🔥 Hype: <strong>{{ "{:.2f}".format(hype or 0) }}</strong>
+            </p>
+            <p class="mb-1">
+              💰 Value: <strong>${{ "{:,.0f}".format(value or 0) }}</strong>
+            </p>
+            <form method="POST" action="/remove_driver/{{ d }}" class="mt-2">
+              <button class="btn btn-outline-danger btn-sm w-100">
+                ➖ Sell Driver
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">No drivers selected yet.</p>
+    {% endif %}
+
+    <!-- 🚀 Boost Buttons -->
+    <hr class="my-5" />
+    <h4 class="text-center mb-3">🚀 Available Boosts</h4>
+    <div class="row row-cols-1 row-cols-md-3 g-3 text-center">
+      <div class="col">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">⚡ Qualifying Boost</h5>
+            <p class="text-muted mb-3">Cost: $1,000,000</p>
+            <form method="POST" action="/boost/qualifying">
+              <button class="btn btn-outline-primary w-100">
+                Activate (not implimented)
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">🏁 Race Boost</h5>
+            <p class="text-muted mb-3">Cost: $1,000,000</p>
+            <form method="POST" action="/boost/race">
+              <button class="btn btn-outline-primary w-100">
+                Activate (not implimented)
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">🚀 Pass Boost</h5>
+            <p class="text-muted mb-3">Cost: $1,000,000</p>
+            <form method="POST" action="/boost/pass">
+              <button class="btn btn-outline-primary w-100">
+                Activate (not implimented)
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <a href="/" class="btn btn-outline-primary">⬅ Back to Home</a>
+    <div class="text-center mt-5">
+      <a href="/" class="btn btn-outline-dark">⬅ Back to Home</a>
+    </div>
   </body>
 </html>

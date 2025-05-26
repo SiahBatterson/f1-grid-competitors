@@ -161,23 +161,28 @@
       </div>
     </div>
 
-    <div class="text-center mb-5">
-      {% if current_user.is_authenticated %}
-      <form method="POST" action="/add_driver/{{ driver }}">
-        <button type="submit" class="btn btn-success">➕ Purchase</button>
-      </form>
-      <form method="POST" action="/remove_driver/{{ driver }}">
-        <button type="submit" class="btn btn-danger">➖ Sell</button>
-      </form>
-      {% else %}
-      <p><a href="/login">Log in</a> to manage your team</p>
-      {% endif %}
-
-      <a
-        href="{{ url_for('driver_season_view', driver=driver) }}"
-        class="btn btn-secondary btn-action"
-        >📆 View Season</a
-      >
+    <div class="text-center my-4">
+      <div class="d-flex flex-column align-items-center gap-2">
+        {% if current_user.is_authenticated %}
+        <form method="POST" action="/add_driver/{{ driver }}">
+          <button type="submit" class="btn btn-success w-100">
+            ➕ Purchase
+          </button>
+        </form>
+        <form method="POST" action="/remove_driver/{{ driver }}">
+          <button type="submit" class="btn btn-danger w-100">➖ Sell</button>
+        </form>
+        {% else %}
+        <p><a href="/login">Log in</a> to manage your team</p>
+        {% endif %}
+        <a
+          href="{{ url_for('driver_season_view', driver=driver) }}"
+          class="btn btn-secondary w-100"
+        >
+          📆 View Season
+        </a>
+        <a href="/" class="btn btn-outline-dark w-100">⬅ Back to Home</a>
+      </div>
     </div>
 
     <div class="text-center">

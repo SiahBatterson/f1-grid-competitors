@@ -58,19 +58,19 @@
           Last race scored: <strong>{{ last_race_used }}</strong>
         </p>
       </div>
-      {% if current_user.is_authenticated %}
-      <span class="me-2"
-        >👋 Welcome, <strong>{{ current_user.username }}</strong></span
-      >
-      <a href="/profile" class="btn btn-outline-success">Profile</a>
-      <form method="POST" action="/logout" style="display: inline">
-        <button class="btn btn-outline-danger ms-2">Logout</button>
-      </form>
-      {% else %}
-      <a href="/login" class="btn btn-outline-dark">Login</a>
-      <a href="/signup" class="btn btn-outline-dark">Sign Up</a>
-      {% endif %}
-    </div>
+      <div class="d-flex align-items-center justify-content-end gap-3">
+        {% if current_user.is_authenticated %}
+          <span class="text-muted">👋 Welcome, <strong>{{ current_user.username }}</strong></span>
+          <a href="/profile" class="btn btn-outline-success btn-sm">Profile</a>
+          <form method="POST" action="/logout" class="m-0">
+            <button class="btn btn-outline-danger btn-sm">Logout</button>
+          </form>
+        {% else %}
+          <a href="/login" class="btn btn-outline-primary btn-sm">Login</a>
+          <a href="/signup" class="btn btn-outline-secondary btn-sm">Sign Up</a>
+        {% endif %}
+      </div>
+      
 
     {% if top_drivers %}
     <div class="section">
