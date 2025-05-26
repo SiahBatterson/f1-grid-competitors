@@ -130,13 +130,14 @@ def generate_driver_rating_route():
             season_avg_pts = season_avg["Total Points"].values[0] if not season_avg.empty else "N/A"
 
             return render_template(
-                "driver_rating.html",
-                table=df.to_html(classes="table table-bordered text-center", index=False),
-                driver=driver,
-                season_avg=season_avg_pts,
-                hype=hype,
-                value=value
-            )
+            "driver_rating.html",
+            table=df.to_html(classes="table table-bordered text-center", index=False),
+            driver=driver,
+            season_avg=season_avg_pts,
+            hype=hype,
+            value=value,
+            weighted_avg=hype  # <== add this
+        )
         except Exception as e:
             return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
     return "<h2>Use the form to POST a driver abbreviation.</h2>"
