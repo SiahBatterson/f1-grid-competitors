@@ -181,7 +181,15 @@ def generate_driver_rating(driver_abbr, force=False):
 
     avg = seasonal_avg["Total Points"].values[0]
     fantasy_value = round(((avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
-
+    print(f"\n🔢 CALCULATION DEBUG for {driver_abbr}:")
+    print(f"  Seasonal Avg: {seasonal_avg['Total Points'].values[0]}")
+    print(f"  Last 3 Avg  : {last_3_avg['Total Points'].values[0]}")
+    print(f"  Prev 3 Avg  : {prev_3_avg['Total Points'].values[0]}")
+    print(f"  Last Race   : {full_df.iloc[0]['Total Points']}")
+    print(f"  Prev Last   : {full_df.iloc[1]['Total Points']}")
+    print(f"\n🎯 Weighted: {weighted_total}")
+    print(f"🎯 Previous: {previous_weighted}")
+    print(f"🎯 Fantasy : {fantasy_value}")
     return full_out, weighted_total, fantasy_value, previous_weighted
 
 def get_all_cached_drivers():
@@ -204,12 +212,6 @@ def get_all_cached_drivers():
             "VER", "PER", "HAM", "RUS", "NOR", "LEC", "SAI", "ALO", "OCO",
             "GAS", "PIA", "BOT", "ZHO", "MAG", "HUL", "TSU", "ALB", "SAR"
         ])
-    print(f"\n🔢 CALCULATION DEBUG for {driver_abbr}:")
-    print(f"  Seasonal Avg: {seasonal_avg['Total Points'].values[0]}")
-    print(f"  Last 3 Avg  : {last_3_avg['Total Points'].values[0]}")
-    print(f"  Prev 3 Avg  : {prev_3_avg['Total Points'].values[0]}")
-    print(f"  Last Race   : {full_df.iloc[0]['Total Points']}")
-    print(f"  Prev Last   : {full_df.iloc[1]['Total Points']}")
 
     return sorted(drivers)
  
