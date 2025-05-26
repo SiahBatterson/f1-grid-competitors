@@ -19,25 +19,25 @@
     <h1 class="mb-4 text-center">👤 {{ user.username }}'s Profile</h1>
 
     <!-- 📊 Net Worth -->
-    {% set goal = 15000000 %} {% set net_class = 'text-success' if net_worth >=
-    goal else 'text-danger' %}
     <div class="text-center mb-4">
-      <h4>📊 Net Worth (Drivers + Balance)</h4>
-      <h2 class="{{ net_class }}">
-        ${{ "{:,.0f}".format(net_worth) }} {% if net_worth >= goal %} +${{
-        "{:,.0f}".format(net_worth - goal) }} {% else %} -${{
-        "{:,.0f}".format((goal - net_worth)) }} {% endif %}
-      </h2>
+      <h4>💼 Net Worth:</h4>
+      <h2>${{ "{:,.0f}".format(net_worth) }}</h2>
+      <p
+        class="{{ 'text-success' if net_worth_delta >= 0 else 'text-danger' }}"
+      >
+        {{ "+" if net_worth_delta >= 0 else "-" }}${{
+        "{:,.0f}".format(abs(net_worth_delta)) }}
+      </p>
     </div>
 
     <!-- 💰 Balance -->
     <div class="text-center mb-5">
-      <h4>💰 Current Balance:</h4>
+      <h4>💰 Balance:</h4>
       <h2>${{ "{:,.0f}".format(user.balance) }}</h2>
     </div>
 
     <!-- 🏎️ Driver Cards -->
-    <h4 class="mb-3">🏎️ Your Drivers</h4>
+    <h4 class="mb-3">🏎️ Your Team</h4>
     {% if driver_cards %}
     <div class="row row-cols-1 row-cols-md-3 g-4">
       {% for card in driver_cards %}

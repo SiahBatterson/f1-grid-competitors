@@ -377,39 +377,44 @@ def profile():
     }
 
     total_driver_value = 0
-
     for code in drivers:
         try:
-            df, hype, value, _ = generate_driver_rating(code)
+            df, hype, value, previous = generate_driver_rating(code)
             img_filename = driver_info.get(code, {}).get("image", "placeholder.webp")
             full_name = driver_info.get(code, {}).get("name", code)
             driver_img_url = url_for("static", filename=f"driver_images/{img_filename}")
             total_driver_value += value or 0
+
+            value_class = ""
+            if value is not None and previous is not None:
+                value_class = "text-success" if value > previous else "text-danger"
+
             driver_cards.append({
                 "code": code,
                 "name": full_name,
                 "image": driver_img_url,
                 "hype": hype,
-                "value": value
+                "value": value,
+                "value_class": value_class
             })
         except Exception as e:
             print(f"❌ Failed to load driver {code}: {e}")
             continue
 
     balance = current_user.balance
-    goal = 15000000
-    balance_delta = balance - goal
     net_worth = balance + total_driver_value
-    net_worth_delta = net_worth - goal
+    networth_class = "text-success" if net_worth >= 15000000 else "text-danger"
 
     return render_template(
         "profile.html",
         user=current_user,
         driver_cards=driver_cards,
-        balance_delta=balance_delta,
+        balance=balance,
         net_worth=net_worth,
-        net_worth_delta=net_worth_delta
+        networth_class=networth_class
     )
+
+
 
 
 @app.route("/admin/users")
