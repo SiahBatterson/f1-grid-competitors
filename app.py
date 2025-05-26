@@ -226,5 +226,30 @@ def delete_averages():
         return f"❌ Error deleting file: {e}", 500
 
 
+@app.route("/season/<driver>")
+def driver_season_view(driver):
+    all_races = []
+    for year in [2025, 2024, 2023, 2022, 2021]:
+        try:
+            schedule = fastf1.get_event_schedule(year)
+            for _, row in schedule.iterrows():
+                df = calculate_points(year, row["EventName"])
+                if not df.empty and driver in df["Driver"].values:
+                    row_df = df[df["Driver"] == driver].copy()
+                    row_df["Year"] = year
+                    row_df["Grand Prix"] = row["EventName"]
+                    all_races.append(row_df)
+        except Exception:
+            continue
+
+    if not all_races:
+        return f"<h2>No race data for {driver}</h2><a href='/'>⬅ Back</a>"
+
+    df = pd.concat(all_races)
+    df = df[["Year", "Grand Prix", "Quali", "Race", "+Pos", "Q/R/+O", "Total Points"]]
+    df = df.sort_values(by=["Year", "Grand Prix"], ascending=[False, False])
+    return render_template("season.html", table=df.to_html(classes="table table-bordered text-center", index=False))
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
