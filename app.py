@@ -123,11 +123,19 @@ def generate_driver_rating_route():
         if not driver:
             return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
         try:
-            df, _, _ = generate_driver_rating(driver)
+            df, hype, value = generate_driver_rating(driver)
+
+            # Extract season average if available
+            season_avg = df[df["Scope"].astype(str).str.strip() == "Seasonal Average"]
+            season_avg_pts = season_avg["Total Points"].values[0] if not season_avg.empty else "N/A"
+
             return render_template(
                 "driver_rating.html",
                 table=df.to_html(classes="table table-bordered text-center", index=False),
-                driver=driver
+                driver=driver,
+                season_avg=season_avg_pts,
+                hype=hype,
+                value=value
             )
         except Exception as e:
             return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
