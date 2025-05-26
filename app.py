@@ -12,30 +12,6 @@ from utils import (
     get_last_processed_race
 )
 
-driver_image_map = {
-    "ALB": "Alexander_Albon_23.png",
-    "SAI": "Carlos_Sainz_55.png",
-    "LEC": "Charles_Leclerc_16.png",
-    "OCO": "Esteban_Ocon_31.png",
-    "ALO": "Fernando_Alonso_14.png",
-    "BOR": "Gabriel_Bortoletto_5.png",
-    "RUS": "George_Russell_63.png",
-    "HAD": "Isack_Hadjar_6.png",
-    "DOO": "Jack_Doohan_7.png",
-    "ANT": "Kimi_Antonelli_12.png",
-    "STR": "Lance_Stroll_18.png",
-    "NOR": "Lando_Norris_4.png",
-    "HAM": "Lewis_Hamilton_44.png",
-    "PIA": "Oscar_Piastri_81.png",
-    "GAS": "Pierre_Gasly_10.png",
-    "SAR": "Logan_Sargeant_2.png",
-    "VER": "Max_Verstappen_1.png",
-    "ZHO": "Guanyu_Zhou_24.png",
-    "TSU": "Yuki_Tsunoda_22.png",
-    "BOT": "Valtteri_Bottas_77.png",
-    "HUL": "Nico_Hulkenberg_27.png"
-}
-
 
 fastf1.Cache.enable_cache("/mnt/f1_cache")
 app = Flask(__name__)
@@ -65,7 +41,8 @@ def home():
         "HUL": "Nico Hülkenberg",
         "BOR": "Gabriel Bortoleto",
         "HAD": "Isack Hadjar",
-        "LAW": "Liam Lawson"
+        "LAW": "Liam Lawson",
+        "DOO": "Jack Doohan"
     }
 
     # Only show drivers with results from 2025
@@ -137,6 +114,29 @@ def weighted():
 @app.route("/generate_driver_rating", methods=["GET", "POST"])
 def generate_driver_rating_route():
     if request.method == "POST":
+        driver_image_map = {
+        "ALB": "Alexander_Albon_23.png",
+        "SAI": "Carlos_Sainz_55.png",
+        "LEC": "Charles_Leclerc_16.png",
+        "OCO": "Esteban_Ocon_31.png",
+        "ALO": "Fernando_Alonso_14.png",
+        "BOR": "Gabriel_Bortoletto_5.png",
+        "RUS": "George_Russell_63.png",
+        "HAD": "Isack_Hadjar_6.png",
+        "DOO": "Jack_Doohan_7.png",
+        "ANT": "Kimi_Antonelli_12.png",
+        "STR": "Lance_Stroll_18.png",
+        "NOR": "Lando_Norris_4.png",
+        "HAM": "Lewis_Hamilton_44.png",
+        "PIA": "Oscar_Piastri_81.png",
+        "GAS": "Pierre_Gasly_10.png",
+        "SAR": "Logan_Sargeant_2.png",
+        "VER": "Max_Verstappen_1.png",
+        "ZHO": "Guanyu_Zhou_24.png",
+        "TSU": "Yuki_Tsunoda_22.png",
+        "BOT": "Valtteri_Bottas_77.png",
+        "HUL": "Nico_Hulkenberg_27.png"
+    }
         driver = request.form.get("driver", "").upper().strip()
         base_img_url = "https://raw.githubusercontent.com/toUpperCase78/formula1-datasets/main/F1%202025%20Season%20Drivers/"
         img_filename = driver_image_map.get(driver, "placeholder.png")
