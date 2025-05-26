@@ -185,7 +185,7 @@ def generate_driver_rating_route():
                 value_color = "black"
                 percent_display = ""
                 weekday = datetime.utcnow().weekday()
-                return render_template(
+            return render_template(
                 "driver_rating.html",
                 driver=driver,
                 driver_img_url=driver_img_url,
@@ -428,6 +428,9 @@ def profile():
 @app.route("/admin/users")
 @login_required
 def admin_users():
+    if current_user.username == "siaaah":
+        all_users = User.query.all()
+        return render_template("admin_users.html", users=all_users)
     if current_user.username != "admin" or "siaaah":  # or use a proper role system later
         return "⛔ Access Denied", 403
 
