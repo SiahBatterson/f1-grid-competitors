@@ -3,6 +3,10 @@ import pandas as pd
 import os
 import fastf1
 import time
+from flask import Flask, render_template, request, Response, url_for, redirect
+from flask_login import LoginManager
+from models import db, User
+
 
 from utils import (
     calculate_points,
@@ -15,6 +19,15 @@ from utils import (
 
 fastf1.Cache.enable_cache("/mnt/f1_cache")
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////mnt/f1_cache/users.db'
+db.init_app(app)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 CACHE_DIR = "/mnt/f1_cache"
 
@@ -341,7 +354,16 @@ def update_latest_race():
 
     return f"<h2>✅ Latest race ({race_name}) processed and ratings updated.</h2><a href='/'>⬅ Back</a>"
 
-
+@app.before_first_request
+def initialize_database():
+    db_path = "/mnt/f1_cache/users.db"
+    if not os.path.exists(db_path):
+        print("📦 Creating users.db and tables...")
+        db.create_all()
+        print("✅ User table created.")
+    else:
+        print("ℹ️ users.db already exists.")
 
 if __name__ == "__main__":
+    initialize_database()
     app.run(host="0.0.0.0", port=5000)

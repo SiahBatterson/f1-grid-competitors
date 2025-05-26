@@ -1,3 +1,6 @@
-Flask
+flask
+flask-login
+flask-sqlalchemy
+werkzeug
 fastf1
 pandas
