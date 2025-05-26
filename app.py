@@ -177,6 +177,8 @@ def generate_driver_rating_route():
             previous_value_display = f"${previous_value:,}" if previous_value else "N/A"
 
             # Color and % change
+            weekday = datetime.utcnow().weekday()
+
             if fantasy_value and previous_value:
                 value_color = "green" if fantasy_value > previous_value else "red"
                 percent_change = ((fantasy_value - previous_value) / previous_value) * 100
@@ -184,7 +186,6 @@ def generate_driver_rating_route():
             else:
                 value_color = "black"
                 percent_display = ""
-                weekday = datetime.utcnow().weekday()
             return render_template(
                 "driver_rating.html",
                 driver=driver,
@@ -203,6 +204,29 @@ def generate_driver_rating_route():
             return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
 
     return "<h2>Use the form to POST a driver abbreviation.</h2>"
+
+@app.route("/admin/update_users", methods=["POST"])
+@login_required
+def update_users():
+    if current_user.username not in {"admin", "siaaah"}:
+        return "⛔ Access Denied", 403
+
+    users = User.query.all()
+    for user in users:
+        balance_key = f"balance_{user.id}"
+        drivers_key = f"drivers_{user.id}"
+
+        if balance_key in request.form:
+            try:
+                user.balance = float(request.form[balance_key])
+            except ValueError:
+                pass  # Skip invalid inputs
+
+        if drivers_key in request.form:
+            user.drivers = request.form[drivers_key].strip()
+
+    db.session.commit()
+    return redirect("/admin/users")
 
 
 @app.route("/add_driver/<driver>", methods=["POST"])
