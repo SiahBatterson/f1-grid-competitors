@@ -153,7 +153,11 @@ def generate_driver_rating_route():
         "BOT": "Valtteri.webp",
         "HUL": "Nico.webp"
     }
-        driver = request.form.get("driver", "").upper().strip()
+        driver = (
+        request.form.get("driver") if request.method == "POST"
+        else request.args.get("driver")
+    )
+
         img_filename = driver_image_map.get(driver, "placeholder.webp")
         driver_img_url = url_for("static", filename=f"driver_images/{img_filename}")
         if not driver:
