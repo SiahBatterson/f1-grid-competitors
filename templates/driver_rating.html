@@ -2,11 +2,9 @@
 <html>
   <head>
     <title>{{ driver }} - Profile</title>
-    <img
-      src="{{ driver_img_url }}"
-      alt="{{ driver }} Image"
-      class="driver-image"
-      onerror="this.onerror=null; this.src='https://via.placeholder.com/180';"
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
     />
     <style>
       body {
@@ -41,32 +39,6 @@
         margin: 0 10px;
       }
 
-      body {
-        background-color: #f8f9fa;
-      }
-      .profile-header {
-        text-align: center;
-        margin-bottom: 2rem;
-      }
-      .driver-image {
-        width: 180px;
-        height: 180px;
-        object-fit: cover;
-        border-radius: 50%;
-        border: 4px solid #dee2e6;
-        margin-bottom: 1rem;
-      }
-      .stat-box {
-        background: #fff;
-        border-radius: 8px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-        margin-bottom: 2rem;
-      }
-      .btn-action {
-        width: 120px;
-        margin: 0 10px;
-      }
       .data-card {
         background: #ffffff;
         border: 1px solid #dee2e6;
@@ -75,9 +47,11 @@
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
         margin-bottom: 1.5rem;
       }
+
       .data-card h5 {
         font-weight: bold;
       }
+
       .data-card table {
         font-size: 0.95rem;
       }
@@ -86,9 +60,10 @@
   <body class="container mt-5">
     <div class="profile-header">
       <img
-        src="{{ url_for('static', filename='drivers/' + driver + '.jpg') }}"
+        src="{{ driver_img_url }}"
         alt="{{ driver }} Image"
         class="driver-image"
+        onerror="this.onerror=null; this.src='https://via.placeholder.com/180';"
       />
       <h1 class="fw-bold">{{ driver }}</h1>
       <p class="text-muted">Driver Profile Overview</p>
@@ -124,6 +99,7 @@
           </table>
         </div>
       </div>
+
       <div class="col-md-6">
         <div class="data-card">
           <h5 class="text-center">📉 Previous 3 Races</h5>
@@ -143,6 +119,7 @@
           </table>
         </div>
       </div>
+
       <div class="col-md-6">
         <div class="data-card">
           <h5 class="text-center">📊 Season Average</h5>
@@ -162,6 +139,7 @@
           </table>
         </div>
       </div>
+
       <div class="col-md-6">
         <div class="data-card">
           <h5 class="text-center">📍 Last Race</h5>
