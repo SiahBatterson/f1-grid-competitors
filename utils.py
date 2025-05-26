@@ -66,14 +66,15 @@ def generate_driver_rating(driver_abbr, force=False):
 
         try:
             avg = df[df["Scope"] == "Seasonal Average"]["Total Points"].values[0]
-            weighted_total = round(
-                avg * 0.6 +
-                df[df["Scope"] == "Last 3 Races Avg"]["Total Points"].values[0] * 0.2 +
-                df[df["Scope"].isna()].iloc[0]["Total Points"] * 0.2,
-                2
-            )
+            last3 = df[df["Scope"] == "Last 3 Races Avg"]["Total Points"].values[0]
+            prev3 = df[df["Scope"] == "Prev 3 Races Avg"]["Total Points"].values[0]
+            last_race = df[df["Scope"].isna()]["Total Points"].iloc[0]
+            prev_race = df[df["Scope"].isna()]["Total Points"].iloc[1] if len(df[df["Scope"].isna()]) > 1 else last_race
+
+            weighted_total = round(avg * 0.6 + last3 * 0.2 + last_race * 0.2, 2)
+            previous_weighted = round(avg * 0.6 + prev3 * 0.2 + prev_race * 0.2, 2)
             fantasy_value = round(((avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
-            previous_weighted = weighted_total  # Optional: make smarter
+
         except Exception as e:
             print(f"⚠️ Failed to compute value from cached file: {e}")
             weighted_total = fantasy_value = previous_weighted = None
