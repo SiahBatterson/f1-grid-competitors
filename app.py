@@ -343,6 +343,22 @@ def delete_averages():
     except Exception as e:
         return f"❌ Error deleting file: {e}", 500
 
+@app.route("/profile")
+@login_required
+def profile():
+    drivers = current_user.drivers.split(",") if current_user.drivers else []
+    return render_template("profile.html", user=current_user, drivers=drivers)
+
+@app.route("/admin/users")
+@login_required
+def admin_users():
+    if current_user.username != "admin":  # or use a proper role system later
+        return "⛔ Access Denied", 403
+
+    all_users = User.query.all()
+    return render_template("admin_users.html", users=all_users)
+
+
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
