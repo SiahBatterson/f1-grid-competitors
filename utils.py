@@ -157,6 +157,8 @@ def generate_driver_rating(driver_abbr, force=False):
     full_out.to_csv(output_path, index=False)
 
     fantasy_value = None
+    print(f"DEBUG avg: {avg} ({type(avg)}), weighted_total: {weighted_total} ({type(weighted_total)})")
+
     if weighted_total is not None:
         avg = seasonal_avg["Total Points"].values[0]
         fantasy_value = None
