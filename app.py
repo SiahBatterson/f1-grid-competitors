@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import fastf1
 import time
+from flask import Response
 
 from utils import (
     calculate_points,
@@ -92,15 +93,17 @@ def generate_all_driver_ratings_route():
 
 @app.route("/clear_driver_ratings", methods=["POST"])
 def clear_driver_ratings():
-    deleted = []
-    for file in os.listdir(CACHE_DIR):
-        if file.startswith("Driver Rating -") and file.endswith(".csv"):
-            try:
-                os.remove(os.path.join(CACHE_DIR, file))
-                deleted.append(file)
-            except Exception as e:
-                print(f"❌ Failed to delete {file}: {e}")
-    return f"<h2>🪝 Cleared {len(deleted)} driver rating files.</h2><a href='/'>⬅ Back</a>"
+    def generate():
+        yield "<h2>🪝 Clearing driver rating files...</h2><ul>"
+        for file in os.listdir(CACHE_DIR):
+            if file.startswith("Driver Rating -") and file.endswith(".csv"):
+                try:
+                    os.remove(os.path.join(CACHE_DIR, file))
+                    yield f"<li>✅ Deleted {file}</li>"
+                except Exception as e:
+                    yield f"<li>❌ Failed to delete {file}: {e}</li>"
+        yield "</ul><a href='/'>⬅ Back</a>"
+    return Response(generate(), mimetype='text/html')
 
 
 @app.route("/weighted")

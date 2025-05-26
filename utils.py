@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import time
 
+
 CACHE_DIR = "/mnt/f1_cache"
 fastf1.Cache.enable_cache(CACHE_DIR)
 
