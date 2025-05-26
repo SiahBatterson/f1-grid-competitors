@@ -115,32 +115,31 @@ def weighted():
 def generate_driver_rating_route():
     if request.method == "POST":
         driver_image_map = {
-        "ALB": "Alexander_Albon_23.png",
-        "SAI": "Carlos_Sainz_55.png",
-        "LEC": "Charles_Leclerc_16.png",
-        "OCO": "Esteban_Ocon_31.png",
-        "ALO": "Fernando_Alonso_14.png",
-        "BOR": "Gabriel_Bortoletto_5.png",
-        "RUS": "George_Russell_63.png",
-        "HAD": "Isack_Hadjar_6.png",
-        "DOO": "Jack_Doohan_7.png",
-        "ANT": "Kimi_Antonelli_12.png",
-        "STR": "Lance_Stroll_18.png",
-        "NOR": "Lando_Norris_4.png",
-        "HAM": "Lewis_Hamilton_44.png",
-        "PIA": "Oscar_Piastri_81.png",
-        "GAS": "Pierre_Gasly_10.png",
-        "SAR": "Logan_Sargeant_2.png",
-        "VER": "Max_Verstappen_1.png",
-        "ZHO": "Guanyu_Zhou_24.png",
-        "TSU": "Yuki_Tsunoda_22.png",
-        "BOT": "Valtteri_Bottas_77.png",
-        "HUL": "Nico_Hulkenberg_27.png"
+        "ALB": "Alex.webp",
+        "SAI": "Carlos.webp",
+        "LEC": "Charles.webp",
+        "OCO": "Ocon.webp",
+        "ALO": "Fernando.webp",
+        "BOR": "Gabe.webp",
+        "RUS": "FuckFace.webp",
+        "HAD": "Isack.webp",
+        "DOO": "Jack.webp",
+        "ANT": "Kimi.webp",
+        "STR": "Lance.webp",
+        "NOR": "Lando.webp",
+        "HAM": "Lewis.webp",
+        "PIA": "Oscar.webp",
+        "GAS": "Pierre.webp",
+        "SAR": "Logan.webp",
+        "VER": "Max.webp",
+        "ZHO": "Guanyu.webp",
+        "TSU": "Yuki.webp",
+        "BOT": "Valtteri.webp",
+        "HUL": "Nico.webp"
     }
         driver = request.form.get("driver", "").upper().strip()
-        base_img_url = "https://github.com/toUpperCase78/formula1-datasets/blob/master/F1%202025%20Season%20Drivers/"
-        img_filename = driver_image_map.get(driver, "placeholder.png")
-        driver_img_url = f"{base_img_url}{img_filename}"
+        img_filename = driver_image_map.get(driver, "placeholder.webp")
+        driver_img_url = url_for("static", filename=f"driver_images/{img_filename}")
         if not driver:
             return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
 
