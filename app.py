@@ -392,7 +392,7 @@ def profile():
             driver_cards.append({
                 "code": code,
                 "name": full_name,
-                "image": driver_img_url,
+                "image": img_filename,
                 "hype": hype,
                 "value": value,
                 "value_class": value_class

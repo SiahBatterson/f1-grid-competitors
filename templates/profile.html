@@ -44,7 +44,7 @@
       <div class="col">
         <div class="card h-100 driver-card shadow-sm">
           <img
-            src="{{ card.image }}"
+            src="{{ url_for('static', filename='driver_images/' ~ card.image) }}"
             alt="{{ card.name }}"
             onerror="this.src='https://via.placeholder.com/300x160?text={{ card.code }}'"
           />
