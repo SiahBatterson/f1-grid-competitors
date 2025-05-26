@@ -127,7 +127,7 @@ def generate_driver_rating_route():
 
             # Extract season average if available
             season_avg = df[df["Scope"].astype(str).str.strip() == "Seasonal Average"]
-            season_avg_pts = season_avg["Total Points"].values[0] if not season_avg.empty else "N/A"
+            season_avg_pts = season_avg["Total Points"].values[0] if not season_avg.empty else 0.0
 
             return render_template(
             "driver_rating.html",
