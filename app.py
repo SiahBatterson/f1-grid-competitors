@@ -404,12 +404,14 @@ def profile():
     balance = current_user.balance
     net_worth = balance + total_driver_value
     networth_class = "text-success" if net_worth >= 15000000 else "text-danger"
+    net_worth_delta = net_worth - 15000000
 
     return render_template(
         "profile.html",
         user=current_user,
         driver_cards=driver_cards,
         balance=balance,
+        net_worth_delta=net_worth_delta,
         net_worth=net_worth,
         networth_class=networth_class
     )
