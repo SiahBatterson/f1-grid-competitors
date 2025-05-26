@@ -7,5 +7,5 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
-    balance = db.Column(db.Float, default=1_000_000)
+    balance = db.Column(db.Float, default=19_000_000)
     drivers = db.Column(db.Text, default="")  # comma-separated driver codes

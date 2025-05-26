@@ -203,24 +203,42 @@ def generate_driver_rating_route():
 @login_required
 def add_driver(driver):
     driver = driver.upper()
-    current = current_user.drivers.split(",") if current_user.drivers else []
-    if driver not in current:
-        current.append(driver)
-        current_user.drivers = ",".join(current)
-        current_user.balance -= 100_000  # or use real fantasy value
-        db.session.commit()
+    team = current_user.drivers.split(",") if current_user.drivers else []
+    price = get_driver_price(driver)
+    MAX_TEAM_SIZE = 5
+
+    if driver in team:
+        return "❌ Already on your team.", 400
+
+    if len(team) >= MAX_TEAM_SIZE:
+        return "❌ Team full.", 400
+
+    if current_user.balance < price:
+        return f"❌ Not enough balance. {driver} costs ${price:,}", 400
+
+    team.append(driver)
+    current_user.drivers = ",".join(team)
+    current_user.balance -= price
+    db.session.commit()
     return redirect("/")
+
+
 
 @app.route("/remove_driver/<driver>", methods=["POST"])
 @login_required
 def remove_driver(driver):
-    current = current_user.drivers.split(",")
-    if driver in current:
-        current.remove(driver)
-        current_user.drivers = ",".join(current)
-        current_user.balance += 100_000
+    driver = driver.upper()
+    team = current_user.drivers.split(",")
+    price = get_driver_price(driver)
+
+    if driver in team:
+        team.remove(driver)
+        current_user.drivers = ",".join(team)
+        current_user.balance += price
         db.session.commit()
     return redirect("/")
+
+
 
 
 
@@ -410,7 +428,16 @@ def update_latest_race():
 
     return f"<h2>✅ Latest race ({race_name}) processed and ratings updated.</h2><a href='/'>⬅ Back</a>"
 
-@app.before_first_request
+# Functions Not Routes
+
+def get_driver_price(driver_code):
+    try:
+        _, _, fantasy_value, _ = generate_driver_rating(driver_code)
+        return round(fantasy_value or 0)
+    except Exception as e:
+        print(f"⚠️ Could not get price for {driver_code}: {e}")
+        return 0
+
 def initialize_database():
     db_path = "/mnt/f1_cache/users.db"
     if not os.path.exists(db_path):
