@@ -86,13 +86,14 @@
         <p class="text-muted">Previous Value: {{ previous_value }}</p>
         {% endif %} {% if user_stats %}
         <p class="mb-1">
-          📦 Bought at: ${{ user_stats.value_at_buy | format(',') }}
+          📦 Bought at: ${{ user_stats.value_at_buy | format_string("{:,}") }}
         </p>
         <p
           class="value-change {{ 'text-success' if user_stats.value_diff > 0 else 'text-danger' }}"
         >
-          📈 Value Gained: ${{ user_stats.value_diff | format(',') }}
+          📈 Value Gained: ${{ user_stats.value_diff | format_string("{:,}") }}
         </p>
+
         <p class="mb-0">
           🏁 Races Owned: {{ user_stats.races_owned }} | 🚀 Boost Points: {{
           user_stats.boost_points }}
@@ -138,10 +139,10 @@
                 <th>Pts</th>
               </tr>
               <tr>
-                <td>{{ stat_data.Quali }}</td>
-                <td>{{ stat_data.Race }}</td>
-                <td>{{ stat_data["+Pos"] }}</td>
-                <td>{{ stat_data["Total Points"] }}</td>
+                <td>{{ stat_data.Quali | round(2) }}</td>
+                <td>{{ stat_data.Race round(2) }}</td>
+                <td>{{ stat_data["+Pos"] round(2) }}</td>
+                <td>{{ stat_data["Total Points"] round(2) }}</td>
               </tr>
             </table>
           </div>
@@ -170,10 +171,10 @@
             <tr>
               <td>{{ race.Year }}</td>
               <td>{{ race["Grand Prix"] }}</td>
-              <td>{{ race.Quali }}</td>
-              <td>{{ race.Race }}</td>
-              <td>{{ race["+Pos"] }}</td>
-              <td>{{ race["Total Points"] }}</td>
+              <td>{{ race.Quali round(2) }}</td>
+              <td>{{ race.Race round(2) }}</td>
+              <td>{{ race["+Pos"] round(2) }}</td>
+              <td>{{ race["Total Points"] round(2) }}</td>
             </tr>
             {% endfor %}
           </tbody>
