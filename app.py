@@ -16,7 +16,8 @@ from core_utils import (
     get_last_processed_race,
     get_cached_race,
     is_race_cached,
-    fetch_and_cache_race
+    fetch_and_cache_race,
+    delete_duplicate_grand_prix_files
 )
 from points_utils import (
     generate_all_driver_ratings,
@@ -101,6 +102,12 @@ def home():
     last_race_used = get_last_processed_race()
     return render_template("home.html", drivers=drivers, driver_name_map=driver_name_map, top_drivers=top_drivers, last_race_used=last_race_used)
 
+@app.route("/admin/delete_duplicates", methods=["POST"])
+@login_required
+def duplicates_deletion():
+    if current_user.username not in {"admin", "siaaah"}:
+        return "⛔ Access Denied", 403
+    delete_duplicate_grand_prix_files()
 
 @app.route("/admin/calculate_single", methods=["POST"])
 @login_required
@@ -109,7 +116,7 @@ def admin_calculate_single():
         return "⛔ Access Denied", 403
 
     year = int(request.form.get("year"))
-    gp_name = request.form.get("gp_name")
+    gp_name = clean_gp_name(request.form.get("gp_name"))
 
     try:
         success, message = process_single_race_and_apply_boosts(year, gp_name)
@@ -458,7 +465,8 @@ def delete_race_file():
     try:
         # Extract race info
         year = int(race_file.split(" - ")[0])
-        gp_name = race_file.split(" - ")[1].replace(".csv", "")
+        raw_gp_name = race_file.split(" - ")[1].replace(".csv", "")
+        gp_name = clean_gp_name(raw_gp_name)
 
         # Step 1: Delete main race file
         os.remove(path)
@@ -551,7 +559,8 @@ def admin_fetch_race():
         return "⛔ Access Denied", 403
 
     year = int(request.form.get("year"))
-    gp_name = request.form.get("gp_name").strip()
+    
+    gp_name = clean_gp_name(request.form.get("gp_name", "").strip())
 
     from core_utils import fetch_and_cache_race
     success = fetch_and_cache_race(year, gp_name)
@@ -763,7 +772,7 @@ def driver_season_view(driver):
             schedule = schedule[schedule['EventDate'] < pd.Timestamp.now()]  # ⛔ Filter future races
 
             for _, row in schedule.iterrows():
-                gp_name = row["EventName"]
+                gp_name = clean_gp_name(row["EventName"])
                 df = calculate_single_race(year, gp_name)  # ✅ avoid overwriting last race file
                 if not df.empty and driver in df["Driver"].values:
                     row_df = df[df["Driver"] == driver].copy()
@@ -835,6 +844,15 @@ def get_driver_price(driver_code):
 
 import os
 
+
+
+def clean_gp_name(gp_name):
+    if gp_name.endswith("Grand Prix Grand Prix"):
+        return gp_name.replace("Grand Prix Grand Prix", "Grand Prix")
+    elif gp_name.count("Grand Prix") > 1:
+        return gp_name.replace(" Grand Prix", "", gp_name.count("Grand Prix") - 1)
+    return gp_name
+
 db_path = "/mnt/f1_cache/users.db"
 if not os.path.exists(db_path):
     print("📦 Creating users.db and tables...")
@@ -846,3 +864,5 @@ else:
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
+

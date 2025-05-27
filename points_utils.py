@@ -79,7 +79,7 @@ def process_latest_race_and_apply_boosts():
 
     latest = past_races.iloc[-1]
     year = latest["EventDate"].year
-    gp_name = latest["EventName"]
+    gp_name = clean_gp_name(latest["EventName"])
 
     if not is_race_cached(year, gp_name):
         return False, f"❌ Race not cached: {year} - {gp_name}"
@@ -108,9 +108,10 @@ def generate_driver_rating(driver):
     for year in [2021, 2022, 2023, 2024, 2025]:
         from fastf1 import get_event_schedule
         try:
+            schedule = get_event_schedule(year)
             schedule = schedule[schedule["EventDate"] < pd.Timestamp.now()]
             for _, row in schedule.iterrows():
-                gp_name = row["EventName"]
+                gp_name = clean_gp_name(row["EventName"])
                 if is_race_cached(year, gp_name):
                     df = get_cached_race(year, gp_name)
                     if not df.empty and driver in df["Driver"].values:
@@ -147,3 +148,11 @@ def generate_all_driver_ratings():
             print(f"✅ Generated: {driver}")
         except Exception as e:
             print(f"❌ Failed: {driver}: {e}")
+
+
+def clean_gp_name(gp_name):
+    if gp_name.endswith("Grand Prix Grand Prix"):
+        return gp_name.replace("Grand Prix Grand Prix", "Grand Prix")
+    elif gp_name.count("Grand Prix") > 1:
+        return gp_name.replace(" Grand Prix", "", gp_name.count("Grand Prix") - 1)
+    return gp_name

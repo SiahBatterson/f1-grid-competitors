@@ -114,3 +114,10 @@ def get_all_cached_drivers():
     except Exception as e:
         print(f"❌ Failed to load latest race file: {e}")
         return []
+
+def clean_gp_name(gp_name):
+    if gp_name.endswith("Grand Prix Grand Prix"):
+        return gp_name.replace("Grand Prix Grand Prix", "Grand Prix")
+    elif gp_name.count("Grand Prix") > 1:
+        return gp_name.replace(" Grand Prix", "", gp_name.count("Grand Prix") - 1)
+    return gp_name
