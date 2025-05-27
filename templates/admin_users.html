@@ -18,14 +18,41 @@
       .form-control {
         margin-bottom: 0.75rem;
       }
+
+      .driver-details {
+        display: none;
+        margin-top: 1rem;
+      }
+
+      .driver-table th,
+      .driver-table td {
+        font-size: 0.9rem;
+        text-align: center;
+      }
+
+      .btn-toggle {
+        font-size: 0.9rem;
+        margin-top: 0.75rem;
+      }
     </style>
+    <script>
+      function toggleDetails(id) {
+        const section = document.getElementById(`driver-details-${id}`);
+        if (section.style.display === "none") {
+          section.style.display = "block";
+        } else {
+          section.style.display = "none";
+        }
+      }
+    </script>
   </head>
   <body class="container mt-5">
     <h1 class="mb-4 text-center">🛠️ Admin Dashboard: All Users</h1>
 
     <form method="POST" action="/admin/update_users">
       <div class="row row-cols-1 row-cols-md-2 g-4">
-        {% for user in users %}
+        {% for entry in users %} {% set user = entry.user %} {% set drivers =
+        entry.rostered_drivers %}
         <div class="col">
           <div class="user-card p-3">
             <h5 class="mb-2">
@@ -41,7 +68,7 @@
               value="{{ user.balance }}"
             />
 
-            <label for="drivers_{{ user.id }}">🏎️ Drivers</label>
+            <label for="drivers_{{ user.id }}">🏎️ Drivers (raw)</label>
             <input
               type="text"
               class="form-control"
@@ -53,11 +80,48 @@
               🔥 Boosts: <strong>{{ user.boosts or 'None' }}</strong>
             </p>
 
-            <!-- Separate reset button form -->
+            <button
+              type="button"
+              class="btn btn-outline-secondary btn-toggle"
+              onclick="toggleDetails({{ user.id }})"
+            >
+              👁 View Driver Details
+            </button>
+
+            <div class="driver-details" id="driver-details-{{ user.id }}">
+              {% if drivers %}
+              <table class="table table-sm table-bordered mt-3 driver-table">
+                <thead>
+                  <tr>
+                    <th>Driver</th>
+                    <th>Value at Buy</th>
+                    <th>Current Value</th>
+                    <th>Boost Pts</th>
+                    <th>Races Owned</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for d in drivers %}
+                  <tr>
+                    <td>{{ d.driver }}</td>
+                    <td>${{ d.value_at_buy | round }}</td>
+                    <td>${{ d.current_value | round }}</td>
+                    <td>{{ d.boost_points }}</td>
+                    <td>{{ d.races_owned }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% else %}
+              <p class="text-muted mt-2">No drivers owned.</p>
+              {% endif %}
+            </div>
+
             <form
               method="POST"
               action="/admin/reset_user/{{ user.id }}"
               onsubmit="return confirm('Reset user {{ user.username }}?')"
+              class="mt-3"
             >
               <button type="submit" class="btn btn-danger btn-sm">
                 Reset User

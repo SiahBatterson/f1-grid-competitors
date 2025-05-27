@@ -715,7 +715,16 @@ def admin_users():
         return "⛔ Access Denied", 403
 
     all_users = User.query.all()
-    return render_template("admin_users.html", users=all_users)
+    users_with_drivers = []
+
+    for user in all_users:
+        drivers = RosteredDrivers.query.filter_by(user_id=user.id).all()
+        users_with_drivers.append({
+            "user": user,
+            "rostered_drivers": drivers
+        })
+
+    return render_template("admin_users.html", users=users_with_drivers)
 
 
 @app.route("/signup", methods=["GET", "POST"])
