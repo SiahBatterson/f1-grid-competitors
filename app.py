@@ -17,6 +17,7 @@ from utils import (
     generate_all_driver_ratings,
     get_all_cached_drivers,
     get_last_processed_race,
+    calculate_single_race,
     process_latest_race_and_apply_boosts  # 👈 add this line
 )
 

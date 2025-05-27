@@ -22,6 +22,7 @@
   </head>
   <body class="container mt-5">
     <h1 class="mb-4 text-center">🛠️ Admin Dashboard: All Users</h1>
+
     <form method="POST" action="/admin/update_users">
       <div class="row row-cols-1 row-cols-md-2 g-4">
         {% for user in users %}
@@ -52,11 +53,11 @@
               🔥 Boosts: <strong>{{ user.boosts or 'None' }}</strong>
             </p>
 
+            <!-- Separate reset button form -->
             <form
               method="POST"
               action="/admin/reset_user/{{ user.id }}"
               onsubmit="return confirm('Reset user {{ user.username }}?')"
-              class="d-inline"
             >
               <button type="submit" class="btn btn-danger btn-sm">
                 Reset User
