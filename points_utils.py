@@ -104,6 +104,8 @@ def process_single_race_and_apply_boosts(year, gp_name):
     return True, f"✅ Processed and applied boosts for {gp_name}"
 
 def generate_driver_rating(driver):
+    print(f"\n🔍 Generating driver rating for: {driver}")
+
     all_dfs = []
     for year in [2021, 2022, 2023, 2024, 2025]:
         from fastf1 import get_event_schedule
@@ -123,45 +125,44 @@ def generate_driver_rating(driver):
             print(f"❌ Failed {year}: {e}")
 
     if not all_dfs:
+        print("⚠️ No race data found.")
         return pd.DataFrame(), None, None, None
 
     full_df = pd.concat(all_dfs).sort_values(["Year", "Grand Prix"], ascending=[False, False])
+    print("\n📋 All races used:")
+    print(full_df[["Year", "Grand Prix", "Quali", "Race", "+Pos", "Total Points"]])
+
     last_3 = full_df.head(3)
     prev_3 = full_df.iloc[1:4]
+
+    print("\n📊 Last 3 Races:")
+    print(last_3[["Grand Prix", "Quali", "Race", "+Pos", "Total Points"]])
+
+    print("\n📉 Previous 3 Races (2-4):")
+    print(prev_3[["Grand Prix", "Quali", "Race", "+Pos", "Total Points"]])
 
     seasonal_avg = full_df["Total Points"].mean()
     last_3_avg = last_3["Total Points"].mean()
     last_race = full_df.iloc[0]["Total Points"]
     prev_last = full_df.iloc[1]["Total Points"] if len(full_df) > 1 else last_race
 
+    print(f"\n📈 Averages:")
+    print(f"  Seasonal Avg: {seasonal_avg:.2f}")
+    print(f"  Last 3 Avg:   {last_3_avg:.2f}")
+    print(f"  Last Race:    {last_race:.2f}")
+    print(f"  Prev Race:    {prev_last:.2f}")
+
     weighted_total = round(seasonal_avg * 0.6 + last_3_avg * 0.2 + last_race * 0.2, 2)
     previous_weighted = round(seasonal_avg * 0.6 + prev_3["Total Points"].mean() * 0.2 + prev_last * 0.2, 2)
     fantasy_value = round(((seasonal_avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
 
-    # Add Scope rows
-    scope_rows = []
-
-    if not last_3.empty:
-        row = last_3.mean(numeric_only=True)
-        row["Scope"] = "Last 3 Races Avg"
-        row["Driver"] = driver
-        scope_rows.append(row)
-
-    if not prev_3.empty:
-        row = prev_3.mean(numeric_only=True)
-        row["Scope"] = "Prev 3 Races Avg"
-        row["Driver"] = driver
-        scope_rows.append(row)
-
-    row = full_df[full_df["Year"] == 2025].mean(numeric_only=True)
-    row["Scope"] = "Seasonal Average"
-    row["Driver"] = driver
-    scope_rows.append(row)
-
-    if scope_rows:
-        full_df = pd.concat([full_df, pd.DataFrame(scope_rows)], ignore_index=True)
+    print(f"\n💰 Calculated:")
+    print(f"  Weighted:          {weighted_total}")
+    print(f"  Previous Weighted: {previous_weighted}")
+    print(f"  Fantasy Value:     ${fantasy_value:,.0f}")
 
     return full_df, weighted_total, fantasy_value, previous_weighted
+
 
 
 def generate_all_driver_ratings():

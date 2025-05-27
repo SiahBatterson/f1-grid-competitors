@@ -481,9 +481,6 @@ def delete_race_file():
         if os.path.exists(weighted_path):
             os.remove(weighted_path)
 
-        from utils import generate_all_driver_ratings
-        generate_all_driver_ratings()
-
         # Step 5: Remove from averages file
         avg_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
         if os.path.exists(avg_path):
