@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
+    <meta charset="UTF-8" />
     <title>{{ driver }} - Profile</title>
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
@@ -10,7 +11,6 @@
       body {
         background-color: #f8f9fa;
       }
-
       .profile-box {
         background-color: #fff;
         border-radius: 12px;
@@ -18,7 +18,6 @@
         padding: 2.5rem;
         margin-bottom: 2rem;
       }
-
       .driver-img {
         width: 200px;
         height: 200px;
@@ -27,29 +26,24 @@
         border: 5px solid #dee2e6;
         margin-bottom: 1rem;
       }
-
       .stat-table th,
       .stat-table td {
         text-align: center;
         vertical-align: middle;
         font-size: 0.95rem;
       }
-
       .section-header {
         font-weight: 600;
         font-size: 1.25rem;
         margin-bottom: 1.25rem;
       }
-
       .value-change {
         font-weight: 600;
         font-size: 1rem;
       }
-
       .management-buttons button {
         width: 100%;
       }
-
       .stat-card {
         background-color: white;
         border-radius: 12px;
@@ -60,11 +54,9 @@
         flex-direction: column;
         justify-content: center;
       }
-
       .btn + .btn {
         margin-top: 0.5rem;
       }
-
       @media (max-width: 768px) {
         .driver-img {
           width: 150px;
@@ -74,7 +66,6 @@
     </style>
   </head>
   <body class="container py-5">
-    <!-- Header -->
     <div class="row align-items-center profile-box">
       <div class="col-md-3 text-center">
         <img
@@ -110,7 +101,6 @@
         </p>
         {% endif %}
       </div>
-
       <div class="col-md-3 mt-4 mt-md-0">
         {% if current_user.is_authenticated %} {% if weekday < 4 %}
         <form method="POST" action="/add_driver/{{ driver }}">
@@ -126,17 +116,13 @@
         {% endif %} {% else %}
         <p><a href="/login">Log in</a> to manage your team</p>
         {% endif %}
-        <a
-          href="{{ url_for('driver_season_view', driver=driver) }}"
-          class="btn btn-secondary mb-2 w-100"
+        <a href="/season/{{ driver }}" class="btn btn-secondary mb-2 w-100"
+          >📆 View Current Season</a
         >
-          📆 View Season
-        </a>
         <a href="/" class="btn btn-outline-dark w-100">⬅ Back</a>
       </div>
     </div>
 
-    <!-- Stats Section -->
     <div class="profile-box">
       <h4 class="section-header text-center">📊 Driver Performance Summary</h4>
       <div class="row g-4">

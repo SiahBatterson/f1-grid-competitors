@@ -86,3 +86,31 @@ def preload_race_data_until(year_limit=2025, stop_gp="Miami Grand Prix"):
             if not is_race_cached(year, gp_name):
                 fetch_and_cache_race(year, gp_name)
     print("✅ Preload complete.")
+
+
+def get_all_cached_drivers():
+    latest_file = None
+    latest_time = 0
+
+    for file in os.listdir(CACHE_DIR):
+        if file.endswith(".csv") and " - " in file and not file.startswith("averages") and not file.startswith("Driver Rating"):
+            path = os.path.join(CACHE_DIR, file)
+            modified = os.path.getmtime(path)
+            if modified > latest_time:
+                latest_time = modified
+                latest_file = path
+
+    if not latest_file:
+        print("⚠️ No valid race files found.")
+        return []
+
+    try:
+        df = pd.read_csv(latest_file)
+        if "Driver" in df.columns:
+            return sorted(df["Driver"].dropna().unique())
+        else:
+            print(f"⚠️ 'Driver' column missing in {latest_file}")
+            return []
+    except Exception as e:
+        print(f"❌ Failed to load latest race file: {e}")
+        return []
