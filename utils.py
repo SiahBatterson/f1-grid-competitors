@@ -7,13 +7,16 @@ CACHE_DIR = "/mnt/f1_cache"
 fastf1.Cache.enable_cache(CACHE_DIR)
 
 def calculate_points(year, gp_name):
+    if (year > 2025) or (year == 2025 and gp_name.lower() > "miami"):
+        print(f"⛔ Skipping {year} - {gp_name}: after 2025 Miami")
+        return pd.DataFrame()
     cache_path = os.path.join(CACHE_DIR, f"{year} - {gp_name}.csv")
     if os.path.exists(cache_path):
         cached_df = pd.read_csv(cache_path)
         # Check for minimal validity (non-empty + expected columns)
         required_cols = {'Driver', 'Quali', 'Race', '+Pos', 'Q/R/+O', 'Total Points'}
         if not cached_df.empty and required_cols.issubset(set(cached_df.columns)):
-            last_race_path = os.path.join(CACHE_DIR, f"{year} - LastProcessedRace.txt")
+            last_race_path = os.path.join(CACHE_DIR, "LastProcessedRace.txt")
             with open(last_race_path, "w") as f:
                 f.write(f"{year} - {gp_name}")
             return cached_df
@@ -62,7 +65,7 @@ def calculate_points(year, gp_name):
         )
 
         df.to_csv(cache_path, index=False)
-        last_race_path = os.path.join(CACHE_DIR, f"{year} - LastProcessedRace.txt")
+        last_race_path = os.path.join(CACHE_DIR, "LastProcessedRace.txt")
         with open(last_race_path, "w") as f:
             f.write(f"{year} - {gp_name}")
         return df[['Driver', 'Quali', 'Race', '+Pos', 'Q/R/+O', 'Total Points']]
@@ -295,16 +298,15 @@ def apply_boosts(df, race_name, year):
 
 
 def get_last_processed_race():
-    files = [f for f in os.listdir(CACHE_DIR) if f.endswith("LastProcessedRace.txt")]
-    if not files:
-        return "N/A"
-    
-    latest_file = max(files, key=lambda f: os.path.getmtime(os.path.join(CACHE_DIR, f)))
-    try:
-        with open(os.path.join(CACHE_DIR, latest_file), "r") as f:
-            return f.read().strip()
-    except Exception:
-        return "N/A"
+    path = os.path.join(CACHE_DIR, "LastProcessedRace.txt")
+    if os.path.exists(path):
+        try:
+            with open(path, "r") as f:
+                return f.read().strip()
+        except Exception:
+            return "N/A"
+    return "N/A"
+
     
 
 def process_latest_race_and_apply_boosts():
@@ -391,6 +393,9 @@ def calculate_single_race(year, gp_name):
         )
 
         df.to_csv(cache_path, index=False)
+        last_race_path = os.path.join(CACHE_DIR, f"{year} - LastProcessedRace.txt")
+        with open(last_race_path, "w") as f:
+            f.write(f"{year} - {gp_name}")
         return df[['Driver', 'Quali', 'Race', '+Pos', 'Q/R/+O', 'Total Points']]
 
     except Exception as e:

@@ -96,6 +96,25 @@ def home():
     return render_template("home.html", drivers=drivers, driver_name_map=driver_name_map, top_drivers=top_drivers, last_race_used=last_race_used)
 
 
+@app.route("/admin/calculate_single", methods=["POST"])
+@login_required
+def admin_calculate_single():
+    if current_user.username not in {"admin", "siaaah"}:
+        return "⛔ Access Denied", 403
+
+    year = int(request.form.get("year"))
+    gp_name = request.form.get("gp_name")
+
+    try:
+        df = calculate_single_race(year, gp_name)
+        if df.empty:
+            return f"<h3>❌ No data calculated for {year} - {gp_name}</h3><a href='/admin/management'>⬅ Back</a>"
+        else:
+            return f"<h3>✅ Race processed: {year} - {gp_name}</h3><a href='/admin/management'>⬅ Back</a>"
+    except Exception as e:
+        return f"<h3>❌ Failed to calculate race: {e}</h3><a href='/admin/management'>⬅ Back</a>"
+
+
 @app.route("/admin/reset_user/<int:user_id>", methods=["POST"])
 @login_required
 def reset_user(user_id):

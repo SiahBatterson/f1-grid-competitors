@@ -25,6 +25,7 @@
       <form action="/update_latest_race" method="post">
         <button class="btn btn-success btn-lg">🔄 Update Latest Race</button>
       </form>
+
       <h3 class="mt-5">🗑️ Delete Cached Race File</h3>
       <form method="POST" action="/admin/delete_race">
         <div class="row mb-3">
@@ -40,13 +41,41 @@
           </div>
         </div>
       </form>
+
+      <h3 class="mt-5">
+        📥 Manually Add Single Race (Post-Miami 2025 allowed)
+      </h3>
+      <form method="POST" action="/admin/calculate_single">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <input
+              type="number"
+              name="year"
+              class="form-control"
+              placeholder="Year (e.g. 2025)"
+              required
+            />
+          </div>
+          <div class="col-md-6">
+            <input
+              type="text"
+              name="gp_name"
+              class="form-control"
+              placeholder="Grand Prix Name (e.g. Monaco)"
+              required
+            />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-warning w-100">
+          ➕ Calculate Single Race
+        </button>
+      </form>
     </div>
 
     <div class="text-center mt-5">
       <a href="/admin/management" class="btn btn-outline-dark btn-sm mt-2"
         >⚙️ Open Management Panel</a
       >
-
       <a href="/" class="btn btn-outline-secondary">⬅ Back to Home</a>
     </div>
   </body>
