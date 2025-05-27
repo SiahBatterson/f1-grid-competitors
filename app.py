@@ -46,8 +46,6 @@ CACHE_DIR = "/mnt/f1_cache"
 
 @app.route("/")
 def home():
-    from core_utils import get_all_cached_drivers
-
     driver_name_map = {
         "VER": "Max Verstappen",
         "TSU": "Yuki Tsunoda",
@@ -72,23 +70,23 @@ def home():
         "DOO": "Jack Doohan"
     }
 
+    top_drivers = []
     try:
-        df = pd.read_csv(os.path.join(CACHE_DIR, "Weighted Driver Averages.csv"))
-        df = df.rename(columns={"Weighted Avg": "points", "Driver": "driver"})
-        df["hype"] = df["Hype"].round(2)
-        df["value"] = df["Fantasy Value"].apply(lambda v: f"${round(v):,}")
+        summary_path = os.path.join(CACHE_DIR, "driver_rating_summary.csv")
+        df = pd.read_csv(summary_path)
+        df = df.rename(columns={"Driver": "driver", "Weighted Total": "points", "Fantasy Value": "fantasy_value"})
+        df["value"] = df["fantasy_value"].apply(lambda v: f"${round(v):,}")
         df = df[df["driver"].isin(get_all_cached_drivers())]
         top_drivers = df.sort_values(by="points", ascending=False).head(3).to_dict(orient="records")
     except Exception as e:
         print(f"⚠️ Failed to load top drivers: {e}")
-        top_drivers = []
 
     return render_template(
         "home.html",
         drivers=get_all_cached_drivers(),
         driver_name_map=driver_name_map,
         top_drivers=top_drivers,
-        last_race_used=datetime.now().strftime("%B %d, %Y")  # Or replace with smarter logic
+        last_race_used=datetime.now().strftime("%B %d, %Y")
     )
 
 @app.route("/admin/delete_duplicates", methods=["GET", "POST"])
