@@ -14,43 +14,62 @@
       .profile-box {
         background-color: #fff;
         border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-        padding: 2rem;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        padding: 2.5rem;
         margin-bottom: 2rem;
       }
 
       .driver-img {
-        width: 180px;
-        height: 180px;
+        width: 200px;
+        height: 200px;
         border-radius: 50%;
         object-fit: cover;
-        border: 4px solid #dee2e6;
+        border: 5px solid #dee2e6;
+        margin-bottom: 1rem;
       }
 
       .stat-table th,
       .stat-table td {
         text-align: center;
         vertical-align: middle;
+        font-size: 0.95rem;
       }
 
       .section-header {
         font-weight: 600;
-        margin-bottom: 0.75rem;
+        font-size: 1.25rem;
+        margin-bottom: 1.25rem;
       }
 
       .value-change {
         font-weight: 600;
-      }
-
-      .badge-custom {
-        background-color: #ffc107;
-        color: #212529;
-        font-size: 0.8rem;
-        margin-left: 0.5rem;
+        font-size: 1rem;
       }
 
       .management-buttons button {
         width: 100%;
+      }
+
+      .stat-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+        padding: 1.5rem;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .btn + .btn {
+        margin-top: 0.5rem;
+      }
+
+      @media (max-width: 768px) {
+        .driver-img {
+          width: 150px;
+          height: 150px;
+        }
       }
     </style>
   </head>
@@ -67,7 +86,7 @@
       </div>
       <div class="col-md-6 text-center text-md-start">
         <h2 class="fw-bold">{{ driver }}</h2>
-        <p class="fs-5">
+        <p class="fs-4 mb-1">
           💰
           <strong style="color: {{ value_color }}">{{ fantasy_value }}</strong>
           <span class="fs-6">{{ percent_display }}</span>
@@ -92,8 +111,7 @@
         {% endif %}
       </div>
 
-      <!-- Buttons -->
-      <div class="col-md-3 management-buttons mt-4 mt-md-0">
+      <div class="col-md-3 mt-4 mt-md-0">
         {% if current_user.is_authenticated %} {% if weekday < 4 %}
         <form method="POST" action="/add_driver/{{ driver }}">
           <button class="btn btn-success mb-2">➕ Purchase</button>
@@ -102,31 +120,33 @@
           <button class="btn btn-danger mb-2">➖ Sell</button>
         </form>
         {% else %}
-        <div class="alert alert-warning py-2 text-center">
+        <div class="alert alert-warning text-center">
           🔒 Driver changes locked (Fri–Sun)
         </div>
         {% endif %} {% else %}
-        <p class="text-center">
-          <a href="/login">Log in</a> to manage your team
-        </p>
+        <p><a href="/login">Log in</a> to manage your team</p>
         {% endif %}
         <a
           href="{{ url_for('driver_season_view', driver=driver) }}"
-          class="btn btn-secondary mb-2"
-          >📆 View Season</a
+          class="btn btn-secondary mb-2 w-100"
         >
-        <a href="/" class="btn btn-outline-dark">⬅ Back</a>
+          📆 View Season
+        </a>
+        <a href="/" class="btn btn-outline-dark w-100">⬅ Back</a>
       </div>
     </div>
 
     <!-- Stats Section -->
     <div class="profile-box">
-      <h4 class="section-header">📊 Driver Performance Summary</h4>
+      <h4 class="section-header text-center">📊 Driver Performance Summary</h4>
       <div class="row g-4">
-        <div class="col-md-6 col-lg-3">
-          <div class="border rounded p-3">
-            <h6 class="text-center mb-3">📈 Last 3 Races</h6>
-            <table class="table table-bordered stat-table">
+        {% for stat_label, stat_data in { '📈 Last 3 Races': last_3, '📉
+        Previous 3 Races': prev_3, '📊 Seasonal Average': season_avg, '📍 Last
+        Race': last_race }.items() %}
+        <div class="col-md-6 col-lg-6 col-xl-3">
+          <div class="stat-card">
+            <h6 class="text-center mb-3">{{ stat_label }}</h6>
+            <table class="table table-bordered stat-table mb-0">
               <tr>
                 <th>Quali</th>
                 <th>Race</th>
@@ -134,74 +154,15 @@
                 <th>Pts</th>
               </tr>
               <tr>
-                <td>{{ last_3.Quali }}</td>
-                <td>{{ last_3.Race }}</td>
-                <td>{{ last_3["+Pos"] }}</td>
-                <td>{{ last_3["Total Points"] }}</td>
+                <td>{{ stat_data.Quali }}</td>
+                <td>{{ stat_data.Race }}</td>
+                <td>{{ stat_data["+Pos"] }}</td>
+                <td>{{ stat_data["Total Points"] }}</td>
               </tr>
             </table>
           </div>
         </div>
-
-        <div class="col-md-6 col-lg-3">
-          <div class="border rounded p-3">
-            <h6 class="text-center mb-3">📉 Prev 3 Races</h6>
-            <table class="table table-bordered stat-table">
-              <tr>
-                <th>Quali</th>
-                <th>Race</th>
-                <th>+Pos</th>
-                <th>Pts</th>
-              </tr>
-              <tr>
-                <td>{{ prev_3.Quali }}</td>
-                <td>{{ prev_3.Race }}</td>
-                <td>{{ prev_3["+Pos"] }}</td>
-                <td>{{ prev_3["Total Points"] }}</td>
-              </tr>
-            </table>
-          </div>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
-          <div class="border rounded p-3">
-            <h6 class="text-center mb-3">📊 Seasonal Avg</h6>
-            <table class="table table-bordered stat-table">
-              <tr>
-                <th>Quali</th>
-                <th>Race</th>
-                <th>+Pos</th>
-                <th>Pts</th>
-              </tr>
-              <tr>
-                <td>{{ season_avg.Quali }}</td>
-                <td>{{ season_avg.Race }}</td>
-                <td>{{ season_avg["+Pos"] }}</td>
-                <td>{{ season_avg["Total Points"] }}</td>
-              </tr>
-            </table>
-          </div>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
-          <div class="border rounded p-3">
-            <h6 class="text-center mb-3">📍 Last Race</h6>
-            <table class="table table-bordered stat-table">
-              <tr>
-                <th>Quali</th>
-                <th>Race</th>
-                <th>+Pos</th>
-                <th>Pts</th>
-              </tr>
-              <tr>
-                <td>{{ last_race.Quali }}</td>
-                <td>{{ last_race.Race }}</td>
-                <td>{{ last_race["+Pos"] }}</td>
-                <td>{{ last_race["Total Points"] }}</td>
-              </tr>
-            </table>
-          </div>
-        </div>
+        {% endfor %}
       </div>
     </div>
   </body>
