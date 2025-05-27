@@ -91,12 +91,13 @@ def home():
         last_race_used=datetime.now().strftime("%B %d, %Y")  # Or replace with smarter logic
     )
 
-@app.route("/admin/delete_duplicates", methods=["POST"])
+@app.route("/admin/delete_duplicates", methods=["GET", "POST"])
 @login_required
 def duplicates_deletion():
     if current_user.username not in {"admin", "siaaah"}:
         return "⛔ Access Denied", 403
     delete_duplicate_grand_prix_files()
+    return "✅ Duplicates deleted.<br><a href='/admin/management'>⬅ Back</a>"
 
 @app.route("/admin/calculate_single", methods=["POST"])
 @login_required
