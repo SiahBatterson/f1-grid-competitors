@@ -388,7 +388,12 @@ def preload():
 
     try:
         schedule = fastf1.get_event_schedule(year)
-        chedule = schedule[schedule['EventDate'] < pd.Timestamp.now()]  # Only past races
+
+        # Limit to races before Miami 2025 (exclusive)
+        if year == 2025:
+            schedule = schedule[schedule["EventName"] != "Miami Grand Prix"]
+        else:
+            schedule = schedule[schedule['EventDate'] < pd.Timestamp.now()]
     except Exception as e:
         return f"<h2>Failed to get schedule for {year}: {e}</h2>", 500
 
@@ -410,6 +415,7 @@ def preload():
         return f"<h2>✅ Preloaded and cached averages for {year}</h2><a href='/'>⬅ Back</a>"
     else:
         return f"<h2>⚠️ No valid data for {year}</h2><a href='/'>⬅ Back</a>"
+
 
 @app.route("/admin/delete_race", methods=["POST"])
 @login_required
