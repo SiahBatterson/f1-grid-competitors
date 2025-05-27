@@ -171,10 +171,223 @@
             <tr>
               <td>{{ race.Year }}</td>
               <td>{{ race["Grand Prix"] }}</td>
-              <td>{{ race.Quali round(2) }}</td>
-              <td>{{ race.Race round(2) }}</td>
-              <td>{{ race["+Pos"] round(2) }}</td>
-              <td>{{ race["Total Points"] round(2) }}</td>
+              <td>
+                {{ race.Quali <!DOCTYPE html>
+                <html lang="en">
+                  <head>
+                    <meta charset="UTF-8" />
+                    <title>{{ driver }} - Profile</title>
+                    <link
+                      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+                      rel="stylesheet"
+                    />
+                    <style>
+                      body {
+                        background-color: #f8f9fa;
+                      }
+                      .profile-box {
+                        background-color: #fff;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+                        padding: 2.5rem;
+                        margin-bottom: 2rem;
+                      }
+                      .driver-img {
+                        width: 200px;
+                        height: 200px;
+                        border-radius: 50%;
+                        object-fit: cover;
+                        border: 5px solid #dee2e6;
+                        margin-bottom: 1rem;
+                      }
+                      .stat-table th,
+                      .stat-table td {
+                        text-align: center;
+                        vertical-align: middle;
+                        font-size: 0.95rem;
+                      }
+                      .section-header {
+                        font-weight: 600;
+                        font-size: 1.25rem;
+                        margin-bottom: 1.25rem;
+                      }
+                      .value-change {
+                        font-weight: 600;
+                        font-size: 1rem;
+                      }
+                      .management-buttons button {
+                        width: 100%;
+                      }
+                      .stat-card {
+                        background-color: white;
+                        border-radius: 12px;
+                        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+                        padding: 1.5rem;
+                        height: 100%;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                      }
+                      .btn + .btn {
+                        margin-top: 0.5rem;
+                      }
+                      @media (max-width: 768px) {
+                        .driver-img {
+                          width: 150px;
+                          height: 150px;
+                        }
+                      }
+                    </style>
+                  </head>
+                  <body class="container py-5">
+                    <div class="row align-items-center profile-box">
+                      <div class="col-md-3 text-center">
+                        <img
+                          src="{{ driver_img_url }}"
+                          alt="{{ driver }} Image"
+                          class="driver-img"
+                          onerror="this.onerror=null; this.src='https://via.placeholder.com/180';"
+                        />
+                      </div>
+                      <div class="col-md-6 text-center text-md-start">
+                        <h2 class="fw-bold">{{ driver }}</h2>
+                        <p class="fs-4 mb-1">
+                          💰
+                          <strong style="color: {{ value_color }}"
+                            >{{ fantasy_value }}</strong
+                          >
+                          <span class="fs-6">{{ percent_display }}</span>
+                        </p>
+                        {% if previous_value %}
+                        <p class="text-muted">
+                          Previous Value: {{ previous_value }}
+                        </p>
+                        {% endif %} {% if user_stats %}
+                        <p class="mb-1">
+                          📦 Bought at: ${{ user_stats.value_at_buy |
+                          format_string("{:,}") }}
+                        </p>
+                        <p
+                          class="value-change {{ 'text-success' if user_stats.value_diff > 0 else 'text-danger' }}"
+                        >
+                          📈 Value Gained: ${{ user_stats.value_diff |
+                          format_string("{:,}") }}
+                        </p>
+
+                        <p class="mb-0">
+                          🏁 Races Owned: {{ user_stats.races_owned }} | 🚀
+                          Boost Points: {{ user_stats.boost_points }}
+                        </p>
+                        {% endif %}
+                      </div>
+                      <div class="col-md-3 mt-4 mt-md-0">
+                        {% if current_user.is_authenticated %} {% if weekday < 4
+                        %}
+                        <form method="POST" action="/add_driver/{{ driver }}">
+                          <button class="btn btn-success mb-2">
+                            ➕ Purchase
+                          </button>
+                        </form>
+                        <form
+                          method="POST"
+                          action="/remove_driver/{{ driver }}"
+                        >
+                          <button class="btn btn-danger mb-2">➖ Sell</button>
+                        </form>
+                        {% else %}
+                        <div class="alert alert-warning text-center">
+                          🔒 Driver changes locked (Fri–Sun)
+                        </div>
+                        {% endif %} {% else %}
+                        <p><a href="/login">Log in</a> to manage your team</p>
+                        {% endif %}
+                        <a
+                          href="/season/{{ driver }}"
+                          class="btn btn-secondary mb-2 w-100"
+                          >📆 View Current Season</a
+                        >
+                        <a href="/" class="btn btn-outline-dark w-100"
+                          >⬅ Back</a
+                        >
+                      </div>
+                    </div>
+
+                    <div class="profile-box">
+                      <h4 class="section-header text-center">
+                        📊 Driver Performance Summary
+                      </h4>
+                      <div class="row g-4">
+                        {% for stat_label, stat_data in { '📈 Last 3 Races':
+                        last_3, '📉 Previous 3 Races': prev_3, '📊 Seasonal
+                        Average': season_avg, '📍 Last Race': last_race
+                        }.items() %}
+                        <div class="col-md-6 col-lg-6 col-xl-3">
+                          <div class="stat-card">
+                            <h6 class="text-center mb-3">{{ stat_label }}</h6>
+                            <table class="table table-bordered stat-table mb-0">
+                              <tr>
+                                <th>Quali</th>
+                                <th>Race</th>
+                                <th>+Pos</th>
+                                <th>Pts</th>
+                              </tr>
+                              <tr>
+                                <td>{{ stat_data.Quali | round(2) }}</td>
+                                <td>{{ stat_data.Race | round(2) }}</td>
+                                <td>{{ stat_data["+Pos"] | round(2) }}</td>
+                                <td>
+                                  {{ stat_data["Total Points"] | round(2) }}
+                                </td>
+                              </tr>
+                            </table>
+                          </div>
+                        </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+
+                    {% if last_3_scored %}
+                    <div class="profile-box mt-4">
+                      <h4 class="section-header text-center">
+                        🕒 Last 3 Scored Races
+                      </h4>
+                      <div class="table-responsive">
+                        <table
+                          class="table table-bordered stat-table text-center"
+                        >
+                          <thead>
+                            <tr>
+                              <th>Year</th>
+                              <th>Grand Prix</th>
+                              <th>Quali</th>
+                              <th>Race</th>
+                              <th>+Pos</th>
+                              <th>Total Pts</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {% for race in last_3_scored %}
+                            <tr>
+                              <td>{{ race.Year }}</td>
+                              <td>{{ race["Grand Prix"] }}</td>
+                              <td>{{ race.Quali | round(2) }}</td>
+                              <td>{{ race.Race | round(2) }}</td>
+                              <td>{{ race["+Pos"] | round(2) }}</td>
+                              <td>{{ race["Total Points"] | round(2) }}</td>
+                            </tr>
+                            {% endfor %}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    {% endif %}
+                  </body>
+                </html>
+                (2) }}
+              </td>
+              <td>{{ race.Race | round(2) }}</td>
+              <td>{{ race["+Pos"] | round(2) }}</td>
+              <td>{{ race["Total Points"] | round(2) }}</td>
             </tr>
             {% endfor %}
           </tbody>
