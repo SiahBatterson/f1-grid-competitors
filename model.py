@@ -11,9 +11,6 @@ class User(UserMixin, db.Model):
     balance = db.Column(db.Float, default=15000000)
     drivers = db.Column(db.String, default="")  # comma-separated
     boosts = db.Column(db.String, default="")   # Format: "VER:qualifying;HAM:race"
-    boost_type = db.Column(db.String)  # e.g., "qualifying", "race", or "pass"
-    boost_driver = db.Column(db.String)  # e.g., "VER"
-    boost_expiry = db.Column(db.Date)  # date after which boost expires
 
 
 class UserRaceResult(db.Model):

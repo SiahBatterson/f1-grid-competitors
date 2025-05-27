@@ -16,9 +16,9 @@ from utils import (
     generate_driver_rating,
     generate_all_driver_ratings,
     get_all_cached_drivers,
-    get_last_processed_race
+    get_last_processed_race,
+    process_latest_race_and_apply_boosts  # 👈 add this line
 )
-
 
 fastf1.Cache.enable_cache("/mnt/f1_cache")
 app = Flask(__name__)
@@ -33,6 +33,9 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 CACHE_DIR = "/mnt/f1_cache"
+
+
+
 
 @app.route("/")
 def home():
@@ -91,6 +94,28 @@ def home():
     print(f"🏆 Top drivers selected: {top_drivers}")
     last_race_used = get_last_processed_race()
     return render_template("home.html", drivers=drivers, driver_name_map=driver_name_map, top_drivers=top_drivers, last_race_used=last_race_used)
+
+
+@app.route("/admin/reset_user/<int:user_id>", methods=["POST"])
+@login_required
+def reset_user(user_id):
+    if current_user.username not in {"admin", "siaaah"}:
+        return "⛔ Access Denied", 403
+
+    user = db.session.get(User, user_id)
+    if not user:
+        return "❌ User not found", 404
+
+    user.balance = 15_000_000
+    user.drivers = ""
+    user.boosts = ""
+    user.boost_type = ""
+    user.boost_driver = ""
+    user.boost_expiry = None
+    db.session.commit()
+
+    return redirect("/admin/users")
+
 
 @app.route("/generate_all_driver_ratings", methods=["GET", "POST"])
 def generate_all_driver_ratings_route():

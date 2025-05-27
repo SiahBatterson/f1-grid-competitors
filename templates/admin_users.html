@@ -7,50 +7,70 @@
       rel="stylesheet"
     />
     <style>
-      input[type="text"],
-      input[type="number"] {
-        width: 100%;
-        padding: 4px;
+      .user-card {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .form-control {
+        margin-bottom: 0.75rem;
       }
     </style>
   </head>
   <body class="container mt-5">
-    <h1 class="mb-4">🛠️ Admin Dashboard: All Users</h1>
+    <h1 class="mb-4 text-center">🛠️ Admin Dashboard: All Users</h1>
     <form method="POST" action="/admin/update_users">
-      <table class="table table-bordered text-center align-middle">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Balance</th>
-            <th>Drivers</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for user in users %}
-          <tr>
-            <td>{{ user.id }}</td>
-            <td>{{ user.username }}</td>
-            <td>
-              <input
-                type="number"
-                name="balance_{{ user.id }}"
-                value="{{ user.balance }}"
-              />
-            </td>
-            <td>
-              <input
-                type="text"
-                name="drivers_{{ user.id }}"
-                value="{{ user.drivers or '' }}"
-              />
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <div class="text-center">
-        <button class="btn btn-success" type="submit">💾 Save Changes</button>
+      <div class="row row-cols-1 row-cols-md-2 g-4">
+        {% for user in users %}
+        <div class="col">
+          <div class="user-card p-3">
+            <h5 class="mb-2">
+              👤 {{ user.username }}
+              <small class="text-muted">(#{{ user.id }})</small>
+            </h5>
+
+            <label for="balance_{{ user.id }}">💰 Balance</label>
+            <input
+              type="number"
+              class="form-control"
+              name="balance_{{ user.id }}"
+              value="{{ user.balance }}"
+            />
+
+            <label for="drivers_{{ user.id }}">🏎️ Drivers</label>
+            <input
+              type="text"
+              class="form-control"
+              name="drivers_{{ user.id }}"
+              value="{{ user.drivers or '' }}"
+            />
+
+            <p class="mb-2">
+              🔥 Boosts: <strong>{{ user.boosts or 'None' }}</strong>
+            </p>
+
+            <form
+              method="POST"
+              action="/admin/reset_user/{{ user.id }}"
+              onsubmit="return confirm('Reset user {{ user.username }}?')"
+              class="d-inline"
+            >
+              <button type="submit" class="btn btn-danger btn-sm">
+                Reset User
+              </button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="text-center mt-4">
+        <button class="btn btn-success btn-lg" type="submit">
+          💾 Save Changes
+        </button>
         <a href="/" class="btn btn-outline-primary ms-3">⬅ Back to Home</a>
       </div>
     </form>
