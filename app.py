@@ -708,6 +708,13 @@ def profile():
         networth_class=networth_class
     )
 
+@app.template_filter('format_string')
+def format_string_filter(value, fmt="{:,}"):
+    try:
+        return fmt.format(value)
+    except Exception:
+        return value
+
 @app.route("/admin/users")
 @login_required
 def admin_users():
