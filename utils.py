@@ -343,7 +343,7 @@ def calculate_single_race(year, gp_name):
     """
     Calculate fantasy points for a specific race without updating global last-race tracking.
     """
-    cache_path = os.path.join(CACHE_DIR, f"{year} - {gp_name}.csv")
+    cache_path = os.path.join(CACHE_DIR, f"{year} - {gp_name} Grand Prix.csv")
 
     # Use valid cached data if available
     if os.path.exists(cache_path):
