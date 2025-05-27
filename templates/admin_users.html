@@ -117,16 +117,15 @@
               {% endif %}
             </div>
 
-            <form
-              method="POST"
-              action="/admin/reset_user/{{ user.id }}"
-              onsubmit="return confirm('Reset user {{ user.username }}?')"
-              class="mt-3"
+            <button
+              type="submit"
+              formaction="/admin/reset_user/{{ user.id }}"
+              formmethod="POST"
+              class="btn btn-danger btn-sm mt-3"
+              onclick="return confirm('Reset user {{ user.username }}?')"
             >
-              <button type="submit" class="btn btn-danger btn-sm">
-                Reset User
-              </button>
-            </form>
+              Reset User
+            </button>
           </div>
         </div>
         {% endfor %}

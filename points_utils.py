@@ -91,17 +91,26 @@ def process_latest_race_and_apply_boosts():
     apply_boosts(df, gp_name, year)
     return True, f"✅ Boosts applied for {gp_name}"
 
-def process_single_race_and_apply_boosts(year, gp_name):
-    from core_utils import fetch_and_cache_race
-    if not is_race_cached(year, gp_name):
-        fetch_and_cache_race(year, gp_name)
-
+def process_single_race_and_apply_boosts(driver_code, year, gp_name):
     df = get_cached_race(year, gp_name)
-    if df.empty:
-        return False, f"❌ Failed to calculate {gp_name}"
+    if df.empty or driver_code not in df["Driver"].values:
+        raise ValueError("Driver or race not found in cache")
 
-    apply_boosts(df, gp_name, year)
-    return True, f"✅ Processed and applied boosts for {gp_name}"
+    points = df[df["Driver"] == driver_code]["Total Points"].values[0]
+
+    # Apply boosts
+    rostered = RosteredDrivers.query.filter_by(driver=driver_code).all()
+    for r in rostered:
+        user = User.query.get(r.user_id)
+        if user and user.boosts:
+            boost_type = user.boosts.get("type")
+            if boost_type and not user.boosts.get("used", False):
+                if should_boost_apply(boost_type, gp_name):  # implement this
+                    r.boost_points += points  # simple example
+                    user.boosts["used"] = True
+    db.session.commit()
+
+    return points
 
 def generate_driver_rating(driver):
     print(f"\n🔍 Generating driver rating for: {driver}")

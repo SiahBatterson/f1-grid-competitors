@@ -96,6 +96,12 @@
             <div class="card h-100 shadow-sm text-center">
               <div class="card-body">
                 <h5 class="card-title">{{ driver_name_map.get(d, d) }}</h5>
+                <p class="mb-1 text-muted" style="font-size: 0.9rem">
+                  💰 {{ driver_values.get(d, 'N/A') }}
+                </p>
+                <p class="mb-2 text-muted" style="font-size: 0.9rem">
+                  🏁 {{ driver_points.get(d, 'N/A') }} pts
+                </p>
                 <form
                   method="POST"
                   action="{{ url_for('generate_driver_rating_route') }}"

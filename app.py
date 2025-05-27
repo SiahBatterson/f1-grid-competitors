@@ -306,17 +306,17 @@ def update_users():
 
     users = User.query.all()
     for user in users:
-        balance_key = f"balance_{user.id}"
-        drivers_key = f"drivers_{user.id}"
+        bal_key = f"balance_{user.id}"
+        drv_key = f"drivers_{user.id}"
 
-        if balance_key in request.form:
+        if bal_key in request.form:
             try:
-                user.balance = float(request.form[balance_key])
+                user.balance = float(request.form[bal_key])
             except ValueError:
-                pass  # Skip invalid inputs
+                pass
 
-        if drivers_key in request.form:
-            user.drivers = request.form[drivers_key].strip()
+        if drv_key in request.form:
+            user.drivers = request.form[drv_key]
 
     db.session.commit()
     return redirect("/admin/users")
