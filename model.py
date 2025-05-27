@@ -25,6 +25,7 @@ class UserRaceResult(db.Model):
     total_points = db.Column(db.Float)
 
 class RosteredDrivers(db.Model):
+    __tablename__ = 'rostered_drivers'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     driver = db.Column(db.String, nullable=False)

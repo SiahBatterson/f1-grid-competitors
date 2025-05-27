@@ -155,39 +155,19 @@ from model import RosteredDrivers
 
 @app.route("/generate_driver_rating", methods=["GET", "POST"])
 def generate_driver_rating_route():
-    user_roster = None
-    if current_user.is_authenticated:
-        user_roster = RosteredDrivers.query.filter_by(user_id=current_user.id, driver=driver).first()
+    from model import RosteredDrivers
 
     driver_image_map = {
-        "ALB": "Alex.webp",
-        "SAI": "Carlos.webp",
-        "LEC": "Charles.webp",
-        "OCO": "Ocon.webp",
-        "ALO": "Fernando.webp",
-        "BOR": "Gabe.webp",
-        "RUS": "FuckFace.webp",
-        "HAD": "Isack.webp",
-        "DOO": "Jack.webp",
-        "ANT": "Kimi.webp",
-        "STR": "Lance.webp",
-        "NOR": "Lando.webp",
-        "HAM": "Lewis.webp",
-        "PIA": "Oscar.webp",
-        "GAS": "Pierre.webp",
-        "SAR": "Logan.webp",
-        "VER": "Max.webp",
-        "ZHO": "Guanyu.webp",
-        "TSU": "Yuki.webp",
-        "BOT": "Valtteri.webp",
-        "HUL": "Nico.webp"
+        "ALB": "Alex.webp", "SAI": "Carlos.webp", "LEC": "Charles.webp",
+        "OCO": "Ocon.webp", "ALO": "Fernando.webp", "BOR": "Gabe.webp",
+        "RUS": "FuckFace.webp", "HAD": "Isack.webp", "DOO": "Jack.webp",
+        "ANT": "Kimi.webp", "STR": "Lance.webp", "NOR": "Lando.webp",
+        "HAM": "Lewis.webp", "PIA": "Oscar.webp", "GAS": "Pierre.webp",
+        "SAR": "Logan.webp", "VER": "Max.webp", "ZHO": "Guanyu.webp",
+        "TSU": "Yuki.webp", "BOT": "Valtteri.webp", "HUL": "Nico.webp"
     }
 
-    driver = (
-        request.form.get("driver") if request.method == "POST"
-        else request.args.get("driver")
-    )
-
+    driver = request.form.get("driver") if request.method == "POST" else request.args.get("driver")
     if not driver:
         return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
 
@@ -202,12 +182,12 @@ def generate_driver_rating_route():
         if df.empty:
             return f"<h2>❌ No data available for {driver}</h2><a href='/'>⬅ Back</a>", 404
 
+        # Stat rows
         season_avg_row = df[df["Scope"] == "Seasonal Average"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
         last_3_row = df[df["Scope"] == "Last 3 Races Avg"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
         prev_3_row = df[df["Scope"] == "Prev 3 Races Avg"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
         last_race_row = df[df["Scope"].isna()].iloc[0:1].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
 
-        # Format
         fantasy_value_display = f"${round(fantasy_value):,}" if fantasy_value else "N/A"
         previous_value = (
             round((season_avg_row["Total Points"].values[0] * 0.9 + previous_weighted_avg * 0.1) * 250000)
@@ -215,35 +195,43 @@ def generate_driver_rating_route():
         )
         previous_value_display = f"${previous_value:,}" if previous_value else "N/A"
 
-        # Color and % change
-        if fantasy_value and previous_value:
-            value_color = "green" if fantasy_value > previous_value else "red"
-            percent_change = ((fantasy_value - previous_value) / previous_value) * 100
-            percent_display = f"({percent_change:+.1f}%)"
-        else:
-            value_color = "black"
-            percent_display = ""
+        value_color = "green" if fantasy_value and previous_value and fantasy_value > previous_value else "red"
+        percent_display = (
+            f"({((fantasy_value - previous_value) / previous_value) * 100:+.1f}%)"
+            if fantasy_value and previous_value else ""
+        )
+
+        # Get user-specific data
+        user_stats = None
+        if current_user.is_authenticated:
+            user_roster = RosteredDrivers.query.filter_by(user_id=current_user.id, driver=driver).first()
+            if user_roster:
+                user_stats = {
+                    "value_at_buy": round(user_roster.value_at_buy),
+                    "boost_points": round(user_roster.boost_points),
+                    "value_diff": round((fantasy_value or 0) - user_roster.value_at_buy),
+                    "races_owned": user_roster.races_owned
+                }
 
         return render_template(
-        "driver_rating.html",
-        driver=driver,
-        driver_img_url=driver_img_url,
-        fantasy_value=fantasy_value_display,
-        previous_value=previous_value_display,
-        value_color=value_color,
-        percent_display=percent_display,
-        season_avg=season_avg_row.to_dict(orient="records")[0],
-        last_3=last_3_row.to_dict(orient="records")[0],
-        prev_3=prev_3_row.to_dict(orient="records")[0],
-        last_race=last_race_row.to_dict(orient="records")[0],
-        weekday=weekday,
-        user_roster=user_roster  # 👈 add this
-    )
+            "driver_rating.html",
+            driver=driver,
+            driver_img_url=driver_img_url,
+            fantasy_value=fantasy_value_display,
+            previous_value=previous_value_display,
+            value_color=value_color,
+            percent_display=percent_display,
+            season_avg=season_avg_row.to_dict(orient="records")[0],
+            last_3=last_3_row.to_dict(orient="records")[0],
+            prev_3=prev_3_row.to_dict(orient="records")[0],
+            last_race=last_race_row.to_dict(orient="records")[0],
+            weekday=weekday,
+            user_stats=user_stats
+        )
 
     except Exception as e:
         return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
 
-    return "<h2>Use the form to POST a driver abbreviation.</h2>"
 
 @app.route("/admin/management")
 @login_required
@@ -517,8 +505,6 @@ def delete_averages():
 @app.route("/profile")
 @login_required
 def profile():
-    from model import RosteredDrivers
-
     drivers = current_user.drivers.split(",") if current_user.drivers else []
     driver_cards = []
 
@@ -549,46 +535,43 @@ def profile():
         "ZHO": {"name": "Guanyu Zhou", "image": "Guanyu.webp"}
     }
 
-    # Boost tracking
+    total_driver_value = 0
     boosts = current_user.boosts.split(";") if current_user.boosts else []
     active_boost = boosts[0].split(":")[1] if boosts and ":" in boosts[0] else ""
+
+    from model import RosteredDrivers, UserRaceResult
     last_boost = UserRaceResult.query.filter_by(user_id=current_user.id).order_by(UserRaceResult.id.desc()).first()
     boost_bonus_points = round(last_boost.total_points - last_boost.base_points) if last_boost and last_boost.boosted else 0
 
-    # Get rostered driver data
-    rostered = RosteredDrivers.query.filter_by(user_id=current_user.id).all()
-    driver_data = {r.driver: r for r in rostered}
-
-    total_driver_value = 0
     for code in drivers:
         try:
             df, hype, value, previous = generate_driver_rating(code)
-            img_filename = driver_info.get(code, {}).get("image", "placeholder.webp")
-            full_name = driver_info.get(code, {}).get("name", code)
-            driver_img_url = url_for("static", filename=f"driver_images/{img_filename}")
-            total_driver_value += value or 0
+            if not df.empty:
+                driver_rec = RosteredDrivers.query.filter_by(user_id=current_user.id, driver=code).first()
+                value_at_buy = driver_rec.value_at_buy if driver_rec else value
+                boost_pts = driver_rec.boost_points if driver_rec else 0
+                races_owned = driver_rec.races_owned if driver_rec else 0
 
-            value_class = ""
-            if value is not None and previous is not None:
-                value_class = "text-success" if value > previous else "text-danger"
+                delta = round(value - value_at_buy) if value and value_at_buy else 0
+                delta_class = "text-success" if delta >= 0 else "text-danger"
 
-            roster = driver_data.get(code)
-            value_at_buy = roster.value_at_buy if roster else 0
-            value_gain = round((value or 0) - value_at_buy, 2) if value_at_buy else 0
-            boost_points = roster.boost_points if roster else 0
-            races_owned = roster.races_owned if roster else 0
+                img_filename = driver_info.get(code, {}).get("image", "placeholder.webp")
+                full_name = driver_info.get(code, {}).get("name", code)
+                driver_img_url = url_for("static", filename=f"driver_images/{img_filename}")
+                total_driver_value += value or 0
 
-            driver_cards.append({
-                "code": code,
-                "name": full_name,
-                "image": driver_img_url,
-                "hype": hype,
-                "value": value,
-                "value_class": value_class,
-                "value_gain": value_gain,
-                "boost_points": boost_points,
-                "races_owned": races_owned
-            })
+                driver_cards.append({
+                    "code": code,
+                    "name": full_name,
+                    "image": driver_img_url,
+                    "hype": hype,
+                    "value": value,
+                    "value_at_buy": value_at_buy,
+                    "boost_points": boost_pts,
+                    "races_owned": races_owned,
+                    "delta": delta,
+                    "delta_class": delta_class
+                })
         except Exception as e:
             print(f"❌ Failed to load driver {code}: {e}")
             continue
@@ -609,10 +592,6 @@ def profile():
         net_worth=net_worth,
         networth_class=networth_class
     )
-
-
-
-
 
 @app.route("/admin/users")
 @login_required
