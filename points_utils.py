@@ -138,7 +138,31 @@ def generate_driver_rating(driver):
     previous_weighted = round(seasonal_avg * 0.6 + prev_3["Total Points"].mean() * 0.2 + prev_last * 0.2, 2)
     fantasy_value = round(((seasonal_avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
 
+    # Add Scope rows
+    scope_rows = []
+
+    if not last_3.empty:
+        row = last_3.mean(numeric_only=True)
+        row["Scope"] = "Last 3 Races Avg"
+        row["Driver"] = driver
+        scope_rows.append(row)
+
+    if not prev_3.empty:
+        row = prev_3.mean(numeric_only=True)
+        row["Scope"] = "Prev 3 Races Avg"
+        row["Driver"] = driver
+        scope_rows.append(row)
+
+    row = full_df[full_df["Year"] == 2025].mean(numeric_only=True)
+    row["Scope"] = "Seasonal Average"
+    row["Driver"] = driver
+    scope_rows.append(row)
+
+    if scope_rows:
+        full_df = pd.concat([full_df, pd.DataFrame(scope_rows)], ignore_index=True)
+
     return full_df, weighted_total, fantasy_value, previous_weighted
+
 
 def generate_all_driver_ratings():
     drivers = get_all_cached_drivers()
