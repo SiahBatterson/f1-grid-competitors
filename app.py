@@ -244,7 +244,9 @@ def admin_management():
     if current_user.username not in {"admin", "siaaah"}:
         return "⛔ Access Denied", 403
 
-    return render_template("admin_management.html")
+    cached_races = [f for f in os.listdir(CACHE_DIR) if f.endswith(".csv") and " - " in f]
+    return render_template("admin_management.html", cached_races=sorted(cached_races))
+
 
 @app.route("/boost/<category>", methods=["POST"])
 @login_required
@@ -368,6 +370,21 @@ def preload():
     else:
         return f"<h2>⚠️ No valid data for {year}</h2><a href='/'>⬅ Back</a>"
 
+@app.route("/admin/delete_race", methods=["POST"])
+@login_required
+def delete_race_file():
+    if current_user.username not in {"admin", "siaaah"}:
+        return "⛔ Access Denied", 403
+
+    race_file = request.form.get("race_file")
+    path = os.path.join(CACHE_DIR, race_file)
+
+    if os.path.exists(path):
+        os.remove(path)
+        return f"✅ Deleted {race_file}<br><a href='/admin/management'>⬅ Back</a>"
+    else:
+        return f"⚠️ File not found: {race_file}<br><a href='/admin/management'>⬅ Back</a>"
+
 
 @app.route("/season")
 def season():
@@ -384,7 +401,9 @@ def season():
         return "<h2>No valid race data for this season.</h2>"
 
     season_df = pd.concat(all_results)
-    return render_template("season.html", table=season_df.to_html(classes="table table-bordered text-center", index=False))
+    races = season_df.to_dict(orient="records")
+    return render_template("season.html", races=races)
+
 
 
 @app.route("/averages")

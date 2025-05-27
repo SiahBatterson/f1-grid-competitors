@@ -25,6 +25,21 @@
       <form action="/update_latest_race" method="post">
         <button class="btn btn-success btn-lg">🔄 Update Latest Race</button>
       </form>
+      <h3 class="mt-5">🗑️ Delete Cached Race File</h3>
+      <form method="POST" action="/admin/delete_race">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <select name="race_file" class="form-select">
+              {% for file in cached_races %}
+              <option value="{{ file }}">{{ file }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <button type="submit" class="btn btn-danger">Delete</button>
+          </div>
+        </div>
+      </form>
     </div>
 
     <div class="text-center mt-5">
