@@ -178,51 +178,63 @@ def generate_all_driver_ratings():
         try:
             df, weighted_total, fantasy_value, previous_weighted = generate_driver_rating(driver)
             if df.empty:
+                print(f"⚠️ Skipping {driver}: empty data.")
                 continue
 
             df = df.copy()
+
+            if "Year" not in df.columns:
+                print(f"❌ Skipping {driver}: 'Year' column missing from dataframe.")
+                continue
+
             df_2025 = df[df["Year"] == 2025]
+            print(f"{driver}: {len(df_2025)} races in 2025")
 
-            if not df_2025.empty:
-                # Add scope rows
-                scope_rows = []
+            if df_2025.empty:
+                continue
 
-                last_3 = df_2025.head(3)
-                prev_3 = df_2025.iloc[1:4]
+            # Add scope rows
+            scope_rows = []
 
-                if not last_3.empty:
-                    row = last_3.mean(numeric_only=True)
-                    row["Scope"] = "Last 3 Races Avg"
-                    row["Driver"] = driver
-                    scope_rows.append(row)
+            last_3 = df_2025.head(3)
+            prev_3 = df_2025.iloc[1:4]
 
-                if not prev_3.empty:
-                    row = prev_3.mean(numeric_only=True)
-                    row["Scope"] = "Prev 3 Races Avg"
-                    row["Driver"] = driver
-                    scope_rows.append(row)
+            if not last_3.empty:
+                row = last_3.mean(numeric_only=True)
+                row["Scope"] = "Last 3 Races Avg"
+                row["Driver"] = driver
+                scope_rows.append(row)
 
-                season_row = df_2025.mean(numeric_only=True)
-                season_row["Scope"] = "Seasonal Average"
-                season_row["Driver"] = driver
-                scope_rows.append(season_row)
+            if not prev_3.empty:
+                row = prev_3.mean(numeric_only=True)
+                row["Scope"] = "Prev 3 Races Avg"
+                row["Driver"] = driver
+                scope_rows.append(row)
 
-                if scope_rows:
-                    df = pd.concat([df, pd.DataFrame(scope_rows)], ignore_index=True)
+            season_row = df_2025.mean(numeric_only=True)
+            season_row["Scope"] = "Seasonal Average"
+            season_row["Driver"] = driver
+            scope_rows.append(season_row)
 
-                # Save enriched CSV for this driver
-                df.to_csv(os.path.join(CACHE_DIR, f"Driver Rating - {driver}.csv"), index=False)
+            if scope_rows:
+                df = pd.concat([df, pd.DataFrame(scope_rows)], ignore_index=True)
 
-                # Summary row for UI table
+            # Save enriched CSV for this driver
+            df.to_csv(os.path.join(CACHE_DIR, f"Driver Rating - {driver}.csv"), index=False)
+
+            # Build summary row if valid
+            if all(pd.notna([weighted_total, fantasy_value, previous_weighted])):
                 rating_summary.append({
                     "Driver": driver,
                     "Weighted Total": weighted_total,
                     "Fantasy Value": fantasy_value,
                     "Previous Weighted": previous_weighted
                 })
+            else:
+                print(f"⚠️ Skipping summary for {driver}: NaN in stats.")
 
-                # Add 2025 actual races (only) for average stats
-                all_driver_dfs.append(df_2025)
+            # For leaderboard CSV
+            all_driver_dfs.append(df_2025)
 
             print(f"✅ Generated: {driver}")
 
@@ -230,22 +242,60 @@ def generate_all_driver_ratings():
             print(f"❌ Failed: {driver}: {e}")
 
     # Save quick lookup table for homepage driver stats
+    summary_path = os.path.join(CACHE_DIR, "driver_rating_summary.csv")
     if rating_summary:
         summary_df = pd.DataFrame(rating_summary)
         summary_df = summary_df.sort_values("Weighted Total", ascending=False)
-        summary_df.to_csv(os.path.join(CACHE_DIR, "driver_rating_summary.csv"), index=False)
-        print("📊 Updated driver_rating_summary.csv")
+        summary_df.to_csv(summary_path, index=False)
+        print(f"📊 Saved driver_rating_summary.csv with {len(summary_df)} entries.")
+    else:
+        print("❌ No summary entries generated. Check why df_2025 or values were empty.")
 
-    # Save per-driver 2025 average stats for filtering and leaderboard
+    # Save per-driver 2025 average stats
     if all_driver_dfs:
         combined = pd.concat(all_driver_dfs)
         combined = combined.drop_duplicates(subset=["Driver", "Grand Prix"])
         avg_df = combined.groupby("Driver")[["Quali", "Race", "+Pos", "Total Points"]].mean().round(2).reset_index()
         avg_df = avg_df.sort_values("Total Points", ascending=False)
         avg_df.to_csv(os.path.join(CACHE_DIR, "averages_2025.csv"), index=False)
-        print("📊 Updated averages_2025.csv")
+        print("📊 Saved averages_2025.csv")
 
 
+
+def regenerate_driver_rating_summary():
+    files = [f for f in os.listdir(CACHE_DIR) if f.startswith("Driver Rating - ")]
+    rows = []
+
+    for file in files:
+        path = os.path.join(CACHE_DIR, file)
+        try:
+            df = pd.read_csv(path)
+            driver = df["Driver"].dropna().iloc[0]
+            seasonal_row = df[df["Scope"] == "Seasonal Average"]
+            if seasonal_row.empty:
+                continue
+
+            avg = seasonal_row["Total Points"].values[0]
+            last3_row = df[df["Scope"] == "Last 3 Races Avg"]
+            last3 = last3_row["Total Points"].values[0] if not last3_row.empty else avg
+            last_race = df[df["Scope"].isna()].iloc[0]["Total Points"]
+
+            weighted_total = round(avg * 0.6 + last3 * 0.2 + last_race * 0.2, 2)
+            fantasy_value = round(((avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
+
+            rows.append({
+                "Driver": driver,
+                "Weighted Total": weighted_total,
+                "Fantasy Value": fantasy_value,
+                "Previous Weighted": round(avg * 0.6 + last3 * 0.2 + df[df["Scope"].isna()].iloc[1]["Total Points"] * 0.2, 2)
+            })
+        except Exception as e:
+            print(f"❌ Failed to parse {file}: {e}")
+
+    if rows:
+        summary_df = pd.DataFrame(rows)
+        summary_df.to_csv(os.path.join(CACHE_DIR, "driver_rating_summary.csv"), index=False)
+        print("✅ Rebuilt driver_rating_summary.csv")
 
 
 
