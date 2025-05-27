@@ -230,43 +230,6 @@ def get_all_cached_drivers():
         ])
 
     return sorted(drivers)
- 
-def generate_driver_rating(driver_abbr, force=False):
-    rating_file = os.path.join(CACHE_DIR, f"Driver Rating - {driver_abbr}.csv")
-    if os.path.exists(rating_file) and not force:
-        print(f"Rating file already exists for {driver_abbr}. Use force=True to regenerate.")
-        return
-
-    all_driver_races = []
-
-    for year in range(2020, 2026):  # Adjust the range as needed
-        try:
-            schedule = fastf1.get_event_schedule(year)
-
-            if year == 2025:
-                # Exclude Miami and subsequent races
-                if "Miami Grand Prix" in schedule["EventName"].values:
-                    miami_index = schedule[schedule["EventName"] == "Miami Grand Prix"].index[0]
-                    schedule = schedule.loc[:miami_index - 1]
-
-            time.sleep(1)
-            for _, row in schedule.iterrows():
-                gp_name = row["EventName"]
-                df = calculate_points(year, gp_name)
-                if not df.empty and driver_abbr in df["Driver"].values:
-                    row_df = df[df["Driver"] == driver_abbr].copy()
-                    row_df["Year"] = year
-                    row_df["Grand Prix"] = gp_name
-                    all_driver_races.append(row_df)
-        except Exception as e:
-            print(f"⚠️ Skipping {year}: {e}")
-
-    if all_driver_races:
-        result_df = pd.concat(all_driver_races, ignore_index=True)
-        result_df.to_csv(rating_file, index=False)
-        print(f"✅ Driver rating file saved: {rating_file}")
-    else:
-        print(f"⚠️ No data found for driver {driver_abbr}.")
 
 from model import User, UserRaceResult, RosteredDrivers
 
@@ -433,3 +396,28 @@ def calculate_single_race(year, gp_name):
     except Exception as e:
         print(f"❌ Error loading race data: {e}")
         return pd.DataFrame()
+
+def generate_all_driver_ratings():
+    from datetime import datetime
+
+    drivers = get_all_cached_drivers()
+    print(f"🔁 Generating full driver rating files for {len(drivers)} drivers...")
+
+    weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
+    if os.path.exists(weighted_path):
+        os.remove(weighted_path)
+
+    for driver in drivers:
+        try:
+            generate_driver_rating(driver, force=True)
+            print(f"✅ Cached {driver}")
+        except Exception as e:
+            print(f"❌ Failed to generate for {driver}: {e}")
+
+    if os.path.exists(weighted_path):
+        df = pd.read_csv(weighted_path)
+        df = df.sort_values(by="Weighted Avg", ascending=False)
+        df.to_csv(weighted_path, index=False)
+        print(f"✅ Final weighted driver list saved to: {weighted_path}")
+    else:
+        print("⚠️ No weighted data generated.")
