@@ -19,6 +19,23 @@ def get_cached_race(year, gp_name):
             print(f"❌ Failed to read cache: {e}")
     return pd.DataFrame()
 
+def get_last_processed_race():
+    latest_file = None
+    latest_time = 0
+
+    for file in os.listdir(CACHE_DIR):
+        if file.endswith(".csv") and " - " in file and not file.startswith("averages") and not file.startswith("Driver Rating"):
+            path = os.path.join(CACHE_DIR, file)
+            modified = os.path.getmtime(path)
+            if modified > latest_time:
+                latest_time = modified
+                latest_file = file
+
+    if latest_file:
+        return latest_file.replace(".csv", "")
+    return None
+
+
 def fetch_and_cache_race(year, gp_name):
     try:
         event = fastf1.get_event(year, gp_name)
@@ -121,3 +138,31 @@ def clean_gp_name(gp_name):
     elif gp_name.count("Grand Prix") > 1:
         return gp_name.replace(" Grand Prix", "", gp_name.count("Grand Prix") - 1)
     return gp_name
+
+
+def delete_duplicate_grand_prix_files():
+    seen = {}
+    deleted = []
+
+    for file in os.listdir(CACHE_DIR):
+        if not file.endswith(".csv") or " - " not in file:
+            continue
+
+        try:
+            year, raw_gp = file.replace(".csv", "").split(" - ", 1)
+            clean_name = clean_gp_name(raw_gp)
+            key = f"{year} - {clean_name}"
+
+            if key in seen:
+                # This is a duplicate
+                path = os.path.join(CACHE_DIR, file)
+                os.remove(path)
+                deleted.append(file)
+            else:
+                seen[key] = file
+        except Exception as e:
+            print(f"❌ Error processing file {file}: {e}")
+
+    print(f"✅ Deleted {len(deleted)} duplicate GP files:")
+    for f in deleted:
+        print(f" - {f}")
