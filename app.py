@@ -53,7 +53,14 @@ def home():
 
     for d in drivers:
         try:
-            df, hype, value = generate_driver_rating(d)
+            path = os.path.join(CACHE_DIR, f"Driver Rating - {d}.csv")
+            if not os.path.exists(path):
+                raise FileNotFoundError
+
+            df = pd.read_csv(path)
+            value_row = df[df["Scope"] == "Seasonal Average"]
+            value = value_row["Value"].iloc[0] if not value_row.empty else None
+
             last_race = df[df["Scope"].isna()]
             last_points = last_race["Total Points"].iloc[0] if not last_race.empty else 0
 
@@ -97,7 +104,7 @@ def home():
         "DOO": "Jack Doohan"
     }
 
-    last_race_used = "Miami 2025"  # Optional: make this dynamic if needed
+    last_race_used = "Miami 2025"
 
     return render_template(
         "home.html",
@@ -108,7 +115,6 @@ def home():
         driver_values=driver_values,
         driver_points=driver_points
     )
-
 
 
 @app.route("/admin/reset_user/<int:user_id>", methods=["POST"])
