@@ -129,8 +129,7 @@ def weighted():
 
 @app.route("/generate_driver_rating", methods=["GET", "POST"])
 def generate_driver_rating_route():
-    if request.method == "POST":
-        driver_image_map = {
+    driver_image_map = {
         "ALB": "Alex.webp",
         "SAI": "Carlos.webp",
         "LEC": "Charles.webp",
@@ -153,57 +152,95 @@ def generate_driver_rating_route():
         "BOT": "Valtteri.webp",
         "HUL": "Nico.webp"
     }
-        driver = (
+
+    driver = (
         request.form.get("driver") if request.method == "POST"
         else request.args.get("driver")
     )
 
-        img_filename = driver_image_map.get(driver, "placeholder.webp")
-        driver_img_url = url_for("static", filename=f"driver_images/{img_filename}")
-        if not driver:
-            return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
+    if not driver:
+        return "<h2>⚠️ Please enter a valid driver abbreviation.</h2><a href='/'>⬅ Back</a>"
 
-        try:
-            df, weighted_avg, fantasy_value, previous_weighted_avg = generate_driver_rating(driver)
+    driver = driver.upper().strip()
+    img_filename = driver_image_map.get(driver, "placeholder.webp")
+    driver_img_url = url_for("static", filename=f"driver_images/{img_filename}")
+    weekday = datetime.utcnow().weekday()
 
-            season_avg_row = df[df["Scope"] == "Seasonal Average"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
-            last_3_row = df[df["Scope"] == "Last 3 Races Avg"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
-            prev_3_row = df[df["Scope"] == "Prev 3 Races Avg"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
-            last_race_row = df[df["Scope"].isna()].iloc[0:1].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
+    try:
+        df, weighted_avg, fantasy_value, previous_weighted_avg = generate_driver_rating(driver)
 
-            # Format for display
-            fantasy_value_display = f"${round(fantasy_value):,}" if fantasy_value else "N/A"
-            previous_value = round((season_avg_row["Total Points"].values[0] * 0.9 + previous_weighted_avg * 0.1) * 250000) if previous_weighted_avg else None
-            previous_value_display = f"${previous_value:,}" if previous_value else "N/A"
+        if df.empty:
+            return f"<h2>❌ No data available for {driver}</h2><a href='/'>⬅ Back</a>", 404
 
-            # Color and % change
-            weekday = datetime.utcnow().weekday()
+        season_avg_row = df[df["Scope"] == "Seasonal Average"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
+        last_3_row = df[df["Scope"] == "Last 3 Races Avg"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
+        prev_3_row = df[df["Scope"] == "Prev 3 Races Avg"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
+        last_race_row = df[df["Scope"].isna()].iloc[0:1].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
 
-            if fantasy_value and previous_value:
-                value_color = "green" if fantasy_value > previous_value else "red"
-                percent_change = ((fantasy_value - previous_value) / previous_value) * 100
-                percent_display = f"({percent_change:+.1f}%)"
-            else:
-                value_color = "black"
-                percent_display = ""
-            return render_template(
-                "driver_rating.html",
-                driver=driver,
-                driver_img_url=driver_img_url,
-                fantasy_value=fantasy_value_display,
-                previous_value=previous_value_display,
-                value_color=value_color,
-                percent_display=percent_display,
-                season_avg=season_avg_row.to_dict(orient="records")[0],
-                last_3=last_3_row.to_dict(orient="records")[0],
-                prev_3=prev_3_row.to_dict(orient="records")[0],
-                last_race=last_race_row.to_dict(orient="records")[0],
-                weekday=weekday
-            )
-        except Exception as e:
-            return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
+        # Format
+        fantasy_value_display = f"${round(fantasy_value):,}" if fantasy_value else "N/A"
+        previous_value = (
+            round((season_avg_row["Total Points"].values[0] * 0.9 + previous_weighted_avg * 0.1) * 250000)
+            if previous_weighted_avg else None
+        )
+        previous_value_display = f"${previous_value:,}" if previous_value else "N/A"
+
+        # Color and % change
+        if fantasy_value and previous_value:
+            value_color = "green" if fantasy_value > previous_value else "red"
+            percent_change = ((fantasy_value - previous_value) / previous_value) * 100
+            percent_display = f"({percent_change:+.1f}%)"
+        else:
+            value_color = "black"
+            percent_display = ""
+
+        return render_template(
+            "driver_rating.html",
+            driver=driver,
+            driver_img_url=driver_img_url,
+            fantasy_value=fantasy_value_display,
+            previous_value=previous_value_display,
+            value_color=value_color,
+            percent_display=percent_display,
+            season_avg=season_avg_row.to_dict(orient="records")[0],
+            last_3=last_3_row.to_dict(orient="records")[0],
+            prev_3=prev_3_row.to_dict(orient="records")[0],
+            last_race=last_race_row.to_dict(orient="records")[0],
+            weekday=weekday
+        )
+
+    except Exception as e:
+        return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
 
     return "<h2>Use the form to POST a driver abbreviation.</h2>"
+
+@app.route("/admin/management")
+@login_required
+def admin_management():
+    if current_user.username not in {"admin", "siaaah"}:
+        return "⛔ Access Denied", 403
+
+    return render_template("admin_management.html")
+
+
+@app.route("/boost/<category>", methods=["POST"])
+@login_required
+def activate_global_boost(category):
+    category = category.lower()
+    if category not in {"qualifying", "race", "pass"}:
+        return "❌ Invalid boost category", 400
+
+    current_user.boosts = category
+    db.session.commit()
+    return redirect("/profile")
+
+@app.cli.command("clear_boosts")
+def clear_boosts():
+    users = User.query.all()
+    for user in users:
+        user.boosts = ""
+    db.session.commit()
+    print("✅ All boosts cleared")
 
 @app.route("/admin/update_users", methods=["POST"])
 @login_required
@@ -515,6 +552,25 @@ def driver_season_view(driver):
     df = df[["Year", "Grand Prix", "Quali", "Race", "+Pos", "Q/R/+O", "Total Points"]]
     df = df.sort_values(by=["Year", "Grand Prix"], ascending=[False, False])
     return render_template("season.html", table=df.to_html(classes="table table-bordered text-center", index=False))
+
+@app.route("/boost/<category>/<driver>", methods=["POST"])
+@login_required
+def activate_boost(category, driver):
+    category = category.lower()
+    if category not in {"qualifying", "race", "pass"}:
+        return "❌ Invalid category", 400
+
+    current_boosts = current_user.boosts.split(";") if current_user.boosts else []
+    new_boost = f"{driver.upper()}:{category}"
+    
+    # Replace existing boost for same driver
+    current_boosts = [b for b in current_boosts if not b.startswith(driver.upper())]
+    current_boosts.append(new_boost)
+
+    current_user.boosts = ";".join(current_boosts)
+    db.session.commit()
+    return redirect("/profile")
+
 
 @app.route("/update_latest_race", methods=["POST"])
 def update_latest_race():

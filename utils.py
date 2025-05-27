@@ -246,27 +246,86 @@ def generate_all_driver_ratings():
     else:
         print("⚠️ No weighted data generated.")
 
-def get_last_processed_race():
-    latest_years = sorted([2025, 2024, 2023, 2022, 2021], reverse=True)
+@app.route("/update_latest_race", methods=["POST"])
+def update_latest_race():
+    from datetime import datetime
+    current_year = datetime.now().year
+    schedule = fastf1.get_event_schedule(current_year)
+    past_races = schedule[schedule['EventDate'] < pd.Timestamp.now()]
 
-    for year in latest_years:
-        schedule_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
-        if not os.path.exists(schedule_path):
-            continue
+    if past_races.empty:
+        return "<h2>⚠️ No races have occurred yet this season.</h2><a href='/'>⬅ Back</a>"
 
+    latest_race = past_races.iloc[-1]
+    race_name = latest_race["EventName"]
+    print(f"🔄 Updating with latest race: {race_name}")
+
+    df = calculate_points(current_year, race_name)
+    if df.empty:
+        return f"<h2>⚠️ Failed to calculate points for {race_name}.</h2><a href='/'>⬅ Back</a>"
+
+    # Update global driver ratings
+    for driver in df["Driver"].unique():
         try:
-            df = pd.read_csv(schedule_path)
-            races = df["Grand Prix"].dropna().unique() if "Grand Prix" in df.columns else []
-
-            # Reverse so we check the latest races first
-            for race_name in reversed(races):
-                cache_path = os.path.join(CACHE_DIR, f"{year} - {race_name}.csv")
-                if os.path.exists(cache_path):
-                    df_race = pd.read_csv(cache_path)
-                    if not df_race.empty and "Total Points" in df_race.columns:
-                        return f"{year} - {race_name}"
+            generate_driver_rating(driver, force=True)
+            print(f"✅ Updated rating for {driver}")
         except Exception as e:
-            print(f"⚠️ Failed to read races for {year}: {e}")
-            continue
+            print(f"❌ Failed to update {driver}: {e}")
+
+    # Apply boosts per user
+    apply_boosts(df, race_name, current_year)
+
+    return f"<h2>✅ Latest race ({race_name}) processed and boosts applied.</h2><a href='/'>⬅ Back</a>"
+
+
+from model import User, UserRaceResult
+
+def apply_boosts(df, race_name, year):
+    users = User.query.all()
+    for user in users:
+        user_drivers = user.drivers.split(",")
+        user_boosts = {b.split(":")[0]: b.split(":")[1] for b in user.boosts.split(";") if ":" in b}
+
+        for driver in user_drivers:
+            row = df[df["Driver"] == driver]
+            if row.empty:
+                continue
+
+            base_points = float(row["Total Points"])
+            boost_type = user_boosts.get(driver)
+            boost_multiplier = 1.0
+
+            if boost_type == "qualifying":
+                base = (21 - int(row["Quali"])) * 3
+                bonus = base  # boost only qualifying component
+            elif boost_type == "race":
+                base = (21 - int(row["Race"]))
+                bonus = base
+            elif boost_type == "pass":
+                base = int(row["+Pos"]) * 2
+                bonus = base
+            else:
+                bonus = 0
+
+            total = base_points + bonus  # boost adds the duplicated component
+            boosted = bool(boost_type)
+
+            # Save record
+            result = UserRaceResult(
+                user_id=user.id,
+                driver=driver,
+                year=year,
+                race=race_name,
+                base_points=base_points,
+                category=boost_type or "",
+                boosted=boosted,
+                total_points=total,
+            )
+            db.session.add(result)
+
+        user.boosts = ""  # clear boosts after race
+    db.session.commit()
+
+
 
     return "No valid race found"
