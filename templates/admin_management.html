@@ -9,74 +9,145 @@
     />
   </head>
   <body class="container py-5">
-    <h1 class="mb-4 text-center">🛠️ Admin Management Panel</h1>
+    <h1 class="mb-5 text-center">🛠️ Admin Management Panel</h1>
 
-    <div class="d-grid gap-3 col-6 mx-auto">
+    <div class="d-grid gap-3 col-10 col-md-8 mx-auto">
+      <!-- Clear Driver Ratings -->
       <form action="/clear_driver_ratings" method="post">
-        <button class="btn btn-danger btn-lg">🧹 Clear Driver Ratings</button>
+        <button class="btn btn-danger btn-lg w-100">
+          🧹 Clear Driver Ratings
+        </button>
       </form>
 
+      <!-- Generate All Driver Ratings -->
       <form action="/generate_all_driver_ratings" method="post">
-        <button class="btn btn-primary btn-lg">
+        <button class="btn btn-primary btn-lg w-100">
           ⚙️ Generate All Driver Ratings
         </button>
       </form>
 
+      <!-- Update Latest Race -->
       <form action="/update_latest_race" method="post">
-        <button class="btn btn-success btn-lg">🔄 Update Latest Race</button>
-      </form>
-
-      <h3 class="mt-5">🗑️ Delete Cached Race File</h3>
-      <form method="POST" action="/admin/delete_race">
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <select name="race_file" class="form-select">
-              {% for file in cached_races %}
-              <option value="{{ file }}">{{ file }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-3">
-            <button type="submit" class="btn btn-danger">Delete</button>
-          </div>
-        </div>
-      </form>
-
-      <h3 class="mt-5">
-        📥 Manually Add Single Race (Post-Miami 2025 allowed)
-      </h3>
-      <form method="POST" action="/admin/calculate_single">
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <input
-              type="number"
-              name="year"
-              class="form-control"
-              placeholder="Year (e.g. 2025)"
-              required
-            />
-          </div>
-          <div class="col-md-6">
-            <input
-              type="text"
-              name="gp_name"
-              class="form-control"
-              placeholder="Grand Prix Name (e.g. Monaco)"
-              required
-            />
-          </div>
-        </div>
-        <button type="submit" class="btn btn-warning w-100">
-          ➕ Calculate Single Race
+        <button class="btn btn-success btn-lg w-100">
+          🔄 Update Latest Race (Apply Boosts)
         </button>
       </form>
+
+      <!-- Delete Cached Race File -->
+      <div class="mt-4">
+        <h4>🗑️ Delete Cached Race File</h4>
+        <form method="POST" action="/admin/delete_race">
+          <div class="row mb-3">
+            <div class="col-md-8">
+              <select name="race_file" class="form-select">
+                {% for file in cached_races %}
+                <option value="{{ file }}">{{ file }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <button type="submit" class="btn btn-danger w-100">Delete</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Manually Add Single Race -->
+      <div class="mt-4">
+        <h4>➕ Manually Add Single Race (Post-Miami OK)</h4>
+        <form method="POST" action="/admin/calculate_single">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <input
+                type="number"
+                name="year"
+                class="form-control"
+                placeholder="Year (e.g. 2025)"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                type="text"
+                name="gp_name"
+                class="form-control"
+                placeholder="Grand Prix Name (e.g. Monaco)"
+                required
+              />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-warning w-100">
+            ➕ Calculate Single Race
+          </button>
+        </form>
+      </div>
+
+      <!-- Preload Races Until -->
+      <div class="mt-4">
+        <h4>📦 Preload Races Until GP</h4>
+        <form action="/admin/preload" method="post">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <input
+                type="number"
+                name="year_limit"
+                class="form-control"
+                placeholder="Last Year to Preload (e.g. 2025)"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                type="text"
+                name="stop_gp"
+                class="form-control"
+                placeholder="Stop Before GP (e.g. Miami Grand Prix)"
+                required
+              />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-secondary w-100">
+            🚚 Preload Races Until
+          </button>
+        </form>
+      </div>
+
+      <!-- Fetch and Cache Single Race -->
+      <div class="mt-4">
+        <h4>🧲 Fetch + Cache Single Race</h4>
+        <form action="/admin/fetch_race" method="post">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <input
+                type="number"
+                name="year"
+                class="form-control"
+                placeholder="Year (e.g. 2025)"
+                required
+              />
+            </div>
+            <div class="col-md-6">
+              <input
+                type="text"
+                name="gp_name"
+                class="form-control"
+                placeholder="Grand Prix Name (e.g. Monaco)"
+                required
+              />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-info w-100">
+            🧲 Fetch + Cache Race
+          </button>
+        </form>
+      </div>
     </div>
 
     <div class="text-center mt-5">
-      <a href="/admin/management" class="btn btn-outline-dark btn-sm mt-2"
-        >⚙️ Open Management Panel</a
+      <a href="/" class="btn btn-outline-secondary me-2">⬅ Back to Home</a>
+      <a href="/admin/management" class="btn btn-outline-dark"
+        >🔧 Refresh Panel</a
       >
-      <a href="/" class="btn btn-outline-secondary">⬅ Back to Home</a>
     </div>
   </body>
 </html>

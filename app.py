@@ -528,6 +528,37 @@ def season():
     races = season_df.to_dict(orient="records")
     return render_template("season.html", races=races)
 
+@app.route("/admin/preload", methods=["POST"])
+@login_required
+def admin_preload():
+    if current_user.username not in {"admin", "siaaah"}:
+        return "⛔ Access Denied", 403
+
+    year_limit = int(request.form.get("year_limit", 2025))
+    stop_gp = request.form.get("stop_gp", "Miami Grand Prix").strip()
+
+    try:
+        from core_utils import preload_race_data_until
+        preload_race_data_until(year_limit, stop_gp)
+        return f"<h2>✅ Preloaded all races up to {stop_gp} in {year_limit}</h2><a href='/admin/management'>⬅ Back</a>"
+    except Exception as e:
+        return f"<h2>❌ Failed to preload races: {e}</h2><a href='/admin/management'>⬅ Back</a>", 500
+
+@app.route("/admin/fetch_race", methods=["POST"])
+@login_required
+def admin_fetch_race():
+    if current_user.username not in {"admin", "siaaah"}:
+        return "⛔ Access Denied", 403
+
+    year = int(request.form.get("year"))
+    gp_name = request.form.get("gp_name").strip()
+
+    from core_utils import fetch_and_cache_race
+    success = fetch_and_cache_race(year, gp_name)
+    if success:
+        return f"<h2>✅ Fetched and cached {gp_name} ({year})</h2><a href='/admin/management'>⬅ Back</a>"
+    else:
+        return f"<h2>❌ Failed to fetch/cache {gp_name} ({year})</h2><a href='/admin/management'>⬅ Back</a>"
 
 
 @app.route("/averages")
