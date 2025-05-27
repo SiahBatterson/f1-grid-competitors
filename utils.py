@@ -246,38 +246,6 @@ def generate_all_driver_ratings():
     else:
         print("⚠️ No weighted data generated.")
 
-@app.route("/update_latest_race", methods=["POST"])
-def update_latest_race():
-    from datetime import datetime
-    current_year = datetime.now().year
-    schedule = fastf1.get_event_schedule(current_year)
-    past_races = schedule[schedule['EventDate'] < pd.Timestamp.now()]
-
-    if past_races.empty:
-        return "<h2>⚠️ No races have occurred yet this season.</h2><a href='/'>⬅ Back</a>"
-
-    latest_race = past_races.iloc[-1]
-    race_name = latest_race["EventName"]
-    print(f"🔄 Updating with latest race: {race_name}")
-
-    df = calculate_points(current_year, race_name)
-    if df.empty:
-        return f"<h2>⚠️ Failed to calculate points for {race_name}.</h2><a href='/'>⬅ Back</a>"
-
-    # Update global driver ratings
-    for driver in df["Driver"].unique():
-        try:
-            generate_driver_rating(driver, force=True)
-            print(f"✅ Updated rating for {driver}")
-        except Exception as e:
-            print(f"❌ Failed to update {driver}: {e}")
-
-    # Apply boosts per user
-    apply_boosts(df, race_name, current_year)
-
-    return f"<h2>✅ Latest race ({race_name}) processed and boosts applied.</h2><a href='/'>⬅ Back</a>"
-
-
 from model import User, UserRaceResult
 
 def apply_boosts(df, race_name, year):
@@ -329,3 +297,48 @@ def apply_boosts(df, race_name, year):
 
 
     return "No valid race found"
+
+
+
+def get_last_processed_race():
+    files = [f for f in os.listdir(CACHE_DIR) if f.endswith("LastProcessedRace.txt")]
+    if not files:
+        return "N/A"
+    
+    latest_file = max(files, key=lambda f: os.path.getmtime(os.path.join(CACHE_DIR, f)))
+    try:
+        with open(os.path.join(CACHE_DIR, latest_file), "r") as f:
+            return f.read().strip()
+    except Exception:
+        return "N/A"
+    
+
+def process_latest_race_and_apply_boosts():
+    from datetime import datetime
+    from model import User, UserRaceResult
+
+    current_year = datetime.now().year
+    schedule = fastf1.get_event_schedule(current_year)
+    past_races = schedule[schedule['EventDate'] < pd.Timestamp.now()]
+
+    if past_races.empty:
+        return False, "⚠️ No races have occurred yet this season."
+
+    latest_race = past_races.iloc[-1]
+    race_name = latest_race["EventName"]
+    print(f"🔄 Processing latest race: {race_name}")
+
+    df = calculate_points(current_year, race_name)
+    if df.empty:
+        return False, f"⚠️ Failed to calculate points for {race_name}."
+
+    for driver in df["Driver"].unique():
+        try:
+            generate_driver_rating(driver, force=True)
+            print(f"✅ Updated rating for {driver}")
+        except Exception as e:
+            print(f"❌ Failed to update {driver}: {e}")
+
+    apply_boosts(df, race_name, current_year)
+    return True, f"✅ Latest race ({race_name}) processed and boosts applied."
+

@@ -8,7 +8,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, Response, url_for, redirect
 from flask_login import LoginManager
-from model import db, User
+from model import db, User, UserRaceResult
 
 
 from utils import (
@@ -91,7 +91,6 @@ def home():
     print(f"🏆 Top drivers selected: {top_drivers}")
     last_race_used = get_last_processed_race()
     return render_template("home.html", drivers=drivers, driver_name_map=driver_name_map, top_drivers=top_drivers, last_race_used=last_race_used)
-
 
 @app.route("/generate_all_driver_ratings", methods=["GET", "POST"])
 def generate_all_driver_ratings_route():
@@ -222,7 +221,6 @@ def admin_management():
 
     return render_template("admin_management.html")
 
-
 @app.route("/boost/<category>", methods=["POST"])
 @login_required
 def activate_global_boost(category):
@@ -230,8 +228,15 @@ def activate_global_boost(category):
     if category not in {"qualifying", "race", "pass"}:
         return "❌ Invalid boost category", 400
 
-    current_user.boosts = category
+    BOOST_COST = 1_000_000
+
+    if current_user.balance < BOOST_COST:
+        return "❌ Not enough balance to activate this boost.", 400
+
+    current_user.balance -= BOOST_COST
+    current_user.boosts = category  # or store in boost_driver:category format if needed
     db.session.commit()
+
     return redirect("/profile")
 
 @app.cli.command("clear_boosts")
@@ -574,32 +579,9 @@ def activate_boost(category, driver):
 
 @app.route("/update_latest_race", methods=["POST"])
 def update_latest_race():
-    from datetime import datetime
-    current_year = datetime.now().year
-    schedule = fastf1.get_event_schedule(current_year)
-    past_races = schedule[schedule['EventDate'] < pd.Timestamp.now()]
+    success, message = process_latest_race_and_apply_boosts()
+    return f"<h2>{message}</h2><a href='/'>⬅ Back</a>"
 
-    if past_races.empty:
-        return "<h2>⚠️ No races have occurred yet this season.</h2><a href='/'>⬅ Back</a>"
-
-    latest_race = past_races.iloc[-1]
-    race_name = latest_race["EventName"]
-
-    print(f"🔄 Updating with latest race: {race_name}")
-    df = calculate_points(current_year, race_name)
-
-    if df.empty:
-        return f"<h2>⚠️ Failed to calculate points for {race_name}.</h2><a href='/'>⬅ Back</a>"
-
-    # Trigger update of affected drivers only
-    for driver in df["Driver"].unique():
-        try:
-            generate_driver_rating(driver, force=True)
-            print(f"✅ Updated rating for {driver}")
-        except Exception as e:
-            print(f"❌ Failed to update {driver}: {e}")
-
-    return f"<h2>✅ Latest race ({race_name}) processed and ratings updated.</h2><a href='/'>⬅ Back</a>"
 
 # Functions Not Routes
 
