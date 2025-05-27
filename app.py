@@ -420,11 +420,61 @@ def delete_race_file():
     race_file = request.form.get("race_file")
     path = os.path.join(CACHE_DIR, race_file)
 
-    if os.path.exists(path):
-        os.remove(path)
-        return f"✅ Deleted {race_file}<br><a href='/admin/management'>⬅ Back</a>"
-    else:
+    if not os.path.exists(path):
         return f"⚠️ File not found: {race_file}<br><a href='/admin/management'>⬅ Back</a>"
+
+    try:
+        # Extract race info
+        year = int(race_file.split(" - ")[0])
+        gp_name = race_file.split(" - ")[1].replace(".csv", "")
+
+        # Step 1: Delete main race file
+        os.remove(path)
+
+        # Step 2: Delete LastProcessedRace file if matching
+        last_race_path = os.path.join(CACHE_DIR, f"{year} - LastProcessedRace.txt")
+        if os.path.exists(last_race_path):
+            with open(last_race_path, "r") as f:
+                if f"{year} - {gp_name}" in f.read():
+                    os.remove(last_race_path)
+
+        # Step 3: Remove from all Driver Rating files
+        for file in os.listdir(CACHE_DIR):
+            if file.startswith("Driver Rating - ") and file.endswith(".csv"):
+                file_path = os.path.join(CACHE_DIR, file)
+                df = pd.read_csv(file_path)
+                df = df[~((df["Year"] == year) & (df["Grand Prix"] == gp_name))]
+                df.to_csv(file_path, index=False)
+
+        # Step 4: Rebuild Weighted Driver Averages
+        weighted_path = os.path.join(CACHE_DIR, "Weighted Driver Averages.csv")
+        if os.path.exists(weighted_path):
+            os.remove(weighted_path)
+
+        from utils import generate_all_driver_ratings
+        generate_all_driver_ratings()
+
+        # Step 5: Remove from averages file
+        avg_path = os.path.join(CACHE_DIR, f"averages_{year}.csv")
+        if os.path.exists(avg_path):
+            df = pd.read_csv(avg_path)
+            df = df[df["Grand Prix"] != gp_name]
+            df.to_csv(avg_path, index=False)
+
+        # Step 6: Remove FastF1 session cache
+        try:
+            import shutil
+            event = fastf1.get_event(year, gp_name)
+            session_path = os.path.join(CACHE_DIR, "f1data", str(year), event.Location)
+            if os.path.exists(session_path):
+                shutil.rmtree(session_path)
+        except Exception as e:
+            print(f"⚠️ Failed to delete FastF1 session cache: {e}")
+
+        return f"✅ Deleted all traces of {race_file}<br><a href='/admin/management'>⬅ Back</a>"
+    except Exception as e:
+        return f"❌ Error deleting {race_file}: {e}<br><a href='/admin/management'>⬅ Back</a>"
+
 
 
 @app.route("/season")
