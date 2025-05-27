@@ -43,9 +43,37 @@ CACHE_DIR = "/mnt/f1_cache"
 
 
 
-
 @app.route("/")
 def home():
+    from utils import get_all_cached_drivers, generate_driver_rating
+
+    drivers = get_all_cached_drivers()
+    top_drivers = []
+    driver_values = {}
+    driver_points = {}
+
+    for d in drivers:
+        try:
+            df, hype, value = generate_driver_rating(d)
+            last_race = df[df["Scope"].isna()]
+            last_points = last_race["Total Points"].iloc[0] if not last_race.empty else 0
+
+            top_drivers.append({
+                "driver": d,
+                "points": last_points,
+                "value": f"${value:,.0f}" if value else "N/A"
+            })
+
+            driver_values[d] = f"${value:,.0f}" if value else "N/A"
+            driver_points[d] = round(last_points, 2)
+
+        except Exception:
+            driver_values[d] = "N/A"
+            driver_points[d] = "N/A"
+            continue
+
+    top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
+
     driver_name_map = {
         "VER": "Max Verstappen",
         "TSU": "Yuki Tsunoda",
@@ -70,51 +98,18 @@ def home():
         "DOO": "Jack Doohan"
     }
 
-    top_drivers = []
-    try:
-        summary_path = os.path.join(CACHE_DIR, "driver_rating_summary.csv")
-        df = pd.read_csv(summary_path)
-        df = df.rename(columns={"Driver": "driver", "Weighted Total": "points", "Fantasy Value": "fantasy_value"})
-        df["value"] = df["fantasy_value"].apply(lambda v: f"${round(v):,}")
-        df = df[df["driver"].isin(get_all_cached_drivers())]
-        top_drivers = df.sort_values(by="points", ascending=False).head(3).to_dict(orient="records")
-    except Exception as e:
-        print(f"⚠️ Failed to load top drivers: {e}")
+    last_race_used = "Miami 2025"  # Optional: make this dynamic if needed
 
     return render_template(
         "home.html",
-        drivers=get_all_cached_drivers(),
-        driver_name_map=driver_name_map,
+        drivers=drivers,
         top_drivers=top_drivers,
-        last_race_used=datetime.now().strftime("%B %d, %Y")
+        driver_name_map=driver_name_map,
+        last_race_used=last_race_used,
+        driver_values=driver_values,
+        driver_points=driver_points
     )
 
-@app.route("/admin/delete_duplicates", methods=["GET", "POST"])
-@login_required
-def duplicates_deletion():
-    if current_user.username not in {"admin", "siaaah"}:
-        return "⛔ Access Denied", 403
-    delete_duplicate_grand_prix_files()
-    return "✅ Duplicates deleted.<br><a href='/admin/management'>⬅ Back</a>"
-
-@app.route("/admin/calculate_single", methods=["POST"])
-@login_required
-def admin_calculate_single():
-    if current_user.username not in {"admin", "siaaah"}:
-        return "⛔ Access Denied", 403
-
-    year = int(request.form.get("year"))
-    gp_name = clean_gp_name(request.form.get("gp_name"))
-
-    try:
-        success, message = process_single_race_and_apply_boosts(year, gp_name)
-        return f"<h3>{message}</h3><a href='/admin/management'>⬅ Back</a>"
-        if df.empty:
-            return f"<h3>❌ No data calculated for {year} - {gp_name}</h3><a href='/admin/management'>⬅ Back</a>"
-        else:
-            return f"<h3>✅ Race processed: {year} - {gp_name}</h3><a href='/admin/management'>⬅ Back</a>"
-    except Exception as e:
-        return f"<h3>❌ Failed to calculate race: {e}</h3><a href='/admin/management'>⬅ Back</a>"
 
 
 @app.route("/admin/reset_user/<int:user_id>", methods=["POST"])
