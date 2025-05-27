@@ -46,7 +46,8 @@ CACHE_DIR = "/mnt/f1_cache"
 
 @app.route("/")
 def home():
-    drivers = get_all_cached_drivers()
+    from core_utils import get_all_cached_drivers
+
     driver_name_map = {
         "VER": "Max Verstappen",
         "TSU": "Yuki Tsunoda",
@@ -71,36 +72,24 @@ def home():
         "DOO": "Jack Doohan"
     }
 
-    # Only show drivers with results from 2025
     try:
-        df_2025 = pd.read_csv(os.path.join(CACHE_DIR, "averages_2025.csv"))
-        drivers_2025 = set(df_2025["Driver"].dropna().unique())
-        drivers = [d for d in drivers if d in drivers_2025]
+        df = pd.read_csv(os.path.join(CACHE_DIR, "Weighted Driver Averages.csv"))
+        df = df.rename(columns={"Weighted Avg": "points", "Driver": "driver"})
+        df["hype"] = df["Hype"].round(2)
+        df["value"] = df["Fantasy Value"].apply(lambda v: f"${round(v):,}")
+        df = df[df["driver"].isin(get_all_cached_drivers())]
+        top_drivers = df.sort_values(by="points", ascending=False).head(3).to_dict(orient="records")
     except Exception as e:
-        print(f"⚠️ Couldn't load 2025 driver list: {e}")
-        drivers = []
+        print(f"⚠️ Failed to load top drivers: {e}")
+        top_drivers = []
 
-    top_drivers = []
-    for d in drivers:
-        try:
-            df, hype, value, _ = generate_driver_rating(d)
-            if "Scope" in df.columns:
-                last_3_avg = df[df["Scope"].astype(str).str.strip() == "Last 3 Races Avg"]
-                if not last_3_avg.empty:
-                    top_drivers.append({
-                        "driver": d,
-                        "points": float(last_3_avg["Total Points"].values[0]),
-                        "hype": round(float(hype), 2) if hype else 0,
-                        "value": f"${round(float(value)):,.0f}" if value else "N/A"
-                    })
-        except Exception as e:
-            print(f"❌ Failed to process driver {d}: {e}")
-            continue
-
-    top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
-    print(f"🏆 Top drivers selected: {top_drivers}")
-    last_race_used = get_last_processed_race()
-    return render_template("home.html", drivers=drivers, driver_name_map=driver_name_map, top_drivers=top_drivers, last_race_used=last_race_used)
+    return render_template(
+        "home.html",
+        drivers=get_all_cached_drivers(),
+        driver_name_map=driver_name_map,
+        top_drivers=top_drivers,
+        last_race_used=datetime.now().strftime("%B %d, %Y")  # Or replace with smarter logic
+    )
 
 @app.route("/admin/delete_duplicates", methods=["POST"])
 @login_required
