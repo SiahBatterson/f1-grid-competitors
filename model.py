@@ -23,3 +23,13 @@ class UserRaceResult(db.Model):
     category = db.Column(db.String)  # "qualifying", "race", "pass"
     boosted = db.Column(db.Boolean, default=False)
     total_points = db.Column(db.Float)
+
+class RosteredDriver(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    driver = db.Column(db.String, nullable=False)
+    hype_at_buy = db.Column(db.Float, nullable=False)
+    value_at_buy = db.Column(db.Float, nullable=False)
+    races_owned = db.Column(db.Integer, default=0)
+    boost_points = db.Column(db.Float, default=0)
+    current_value = db.Column(db.Float, default=0)

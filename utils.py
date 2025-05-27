@@ -103,6 +103,7 @@ def generate_driver_rating(driver_abbr, force=False):
     for year in years:
         try:
             schedule = fastf1.get_event_schedule(year)
+            schedule = schedule[schedule['EventDate'] < pd.Timestamp.now()]  # Only past races
             time.sleep(1)
             for _, row in schedule.iterrows():
                 gp_name = row["EventName"]
@@ -253,7 +254,7 @@ def generate_all_driver_ratings():
     else:
         print("⚠️ No weighted data generated.")
 
-from model import User, UserRaceResult
+from model import User, UserRaceResult, RosteredDrivers
 
 def apply_boosts(df, race_name, year):
     users = User.query.all()
@@ -272,7 +273,7 @@ def apply_boosts(df, race_name, year):
 
             if boost_type == "qualifying":
                 base = (21 - int(row["Quali"])) * 3
-                bonus = base  # boost only qualifying component
+                bonus = base
             elif boost_type == "race":
                 base = (21 - int(row["Race"]))
                 bonus = base
@@ -282,10 +283,10 @@ def apply_boosts(df, race_name, year):
             else:
                 bonus = 0
 
-            total = base_points + bonus  # boost adds the duplicated component
+            total = base_points + bonus
             boosted = bool(boost_type)
 
-            # Save record
+            # Record result
             result = UserRaceResult(
                 user_id=user.id,
                 driver=driver,
@@ -298,12 +299,21 @@ def apply_boosts(df, race_name, year):
             )
             db.session.add(result)
 
-        user.boosts = ""  # clear boosts after race
+            # Update UserDriver stats
+            user_driver = RosteredDrivers.query.filter_by(user_id=user.id, driver=driver).first()
+            if user_driver:
+                user_driver.races_owned += 1
+                user_driver.boost_points += bonus
+                try:
+                    _, _, current_value, _ = generate_driver_rating(driver)
+                    user_driver.current_value = current_value
+                except Exception as e:
+                    print(f"⚠️ Failed to update value for {driver}: {e}")
+
+        user.boosts = ""
     db.session.commit()
+    return "Boosts applied and driver stats updated"
 
-
-
-    return "No valid race found"
 
 
 

@@ -151,8 +151,14 @@ def weighted():
     table = df.to_html(classes="table table-hover table-striped text-center", index=False)
     return render_template("weighted.html", table=table)
 
+from model import RosteredDrivers
+
 @app.route("/generate_driver_rating", methods=["GET", "POST"])
 def generate_driver_rating_route():
+    user_roster = None
+    if current_user.is_authenticated:
+        user_roster = RosteredDrivers.query.filter_by(user_id=current_user.id, driver=driver).first()
+
     driver_image_map = {
         "ALB": "Alex.webp",
         "SAI": "Carlos.webp",
@@ -219,19 +225,20 @@ def generate_driver_rating_route():
             percent_display = ""
 
         return render_template(
-            "driver_rating.html",
-            driver=driver,
-            driver_img_url=driver_img_url,
-            fantasy_value=fantasy_value_display,
-            previous_value=previous_value_display,
-            value_color=value_color,
-            percent_display=percent_display,
-            season_avg=season_avg_row.to_dict(orient="records")[0],
-            last_3=last_3_row.to_dict(orient="records")[0],
-            prev_3=prev_3_row.to_dict(orient="records")[0],
-            last_race=last_race_row.to_dict(orient="records")[0],
-            weekday=weekday
-        )
+        "driver_rating.html",
+        driver=driver,
+        driver_img_url=driver_img_url,
+        fantasy_value=fantasy_value_display,
+        previous_value=previous_value_display,
+        value_color=value_color,
+        percent_display=percent_display,
+        season_avg=season_avg_row.to_dict(orient="records")[0],
+        last_3=last_3_row.to_dict(orient="records")[0],
+        prev_3=prev_3_row.to_dict(orient="records")[0],
+        last_race=last_race_row.to_dict(orient="records")[0],
+        weekday=weekday,
+        user_roster=user_roster  # 👈 add this
+    )
 
     except Exception as e:
         return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
@@ -298,12 +305,13 @@ def update_users():
     return redirect("/admin/users")
 
 
+from model import RosteredDrivers
+
 @app.route("/add_driver/<driver>", methods=["POST"])
 @login_required
 def add_driver(driver):
     driver = driver.upper()
     team = current_user.drivers.split(",") if current_user.drivers else []
-    price = get_driver_price(driver)
     MAX_TEAM_SIZE = 5
 
     if driver in team:
@@ -312,8 +320,19 @@ def add_driver(driver):
     if len(team) >= MAX_TEAM_SIZE:
         return "❌ Team full.", 400
 
+    price = get_driver_price(driver)
     if current_user.balance < price:
         return f"❌ Not enough balance. {driver} costs ${price:,}", 400
+
+    _, hype, value, _ = generate_driver_rating(driver)
+    rostered = RosteredDrivers(
+        user_id=current_user.id,
+        driver=driver,
+        hype_at_buy=hype,
+        value_at_buy=value,
+        current_value=value
+    )
+    db.session.add(rostered)
 
     team.append(driver)
     current_user.drivers = ",".join(team)
@@ -322,22 +341,55 @@ def add_driver(driver):
     return redirect("/")
 
 
+    # Update user record
+    team.append(driver)
+    current_user.drivers = ",".join(team)
+    current_user.balance -= price
+
+    db.session.commit()
+    return redirect("/")
+
+
+
 
 @app.route("/remove_driver/<driver>", methods=["POST"])
 @login_required
 def remove_driver(driver):
     driver = driver.upper()
     team = current_user.drivers.split(",")
-    price = get_driver_price(driver)
 
-    if driver in team:
-        team.remove(driver)
-        current_user.drivers = ",".join(team)
-        current_user.balance += price
-        db.session.commit()
-    return redirect("/")
+    if driver not in team:
+        return "❌ Driver not on your team.", 400
+
+    # Refund value based on current value
+    record = RosteredDrivers.query.filter_by(user_id=current_user.id, driver=driver).first()
+    refund = record.current_value if record else get_driver_price(driver)
+
+    # Remove from rostered drivers
+    if record:
+        db.session.delete(record)
+
+    # Update team
+    team.remove(driver)
+    current_user.drivers = ",".join(team)
+    current_user.balance += refund
+
+    db.session.commit()
+    return redirect("/profile")
 
 
+def get_user_driver_data(user_id):
+    rostered = RosteredDrivers.query.filter_by(user_id=user_id).all()
+    user_driver_data = {}
+    for record in rostered:
+        user_driver_data[record.driver] = {
+            "hype_at_buy": record.hype_at_buy,
+            "value_at_buy": record.value_at_buy,
+            "current_value": record.current_value,
+            "boost_points": record.boost_points,
+            "races_owned": record.races_owned
+        }
+    return user_driver_data
 
 
 
@@ -348,6 +400,7 @@ def preload():
 
     try:
         schedule = fastf1.get_event_schedule(year)
+        chedule = schedule[schedule['EventDate'] < pd.Timestamp.now()]  # Only past races
     except Exception as e:
         return f"<h2>Failed to get schedule for {year}: {e}</h2>", 500
 
@@ -390,6 +443,7 @@ def delete_race_file():
 def season():
     year = 2023
     schedule = fastf1.get_event_schedule(year)
+    schedule = schedule[schedule['EventDate'] < pd.Timestamp.now()]  # Only past races
     all_results = []
     for _, row in schedule.iterrows():
         df = calculate_points(year, row["EventName"])
@@ -417,6 +471,7 @@ def averages():
     else:
         try:
             schedule = fastf1.get_event_schedule(year)
+            schedule = schedule[schedule['EventDate'] < pd.Timestamp.now()]  # Only past races
         except Exception as e:
             return f"<h2>Failed to load schedule for {year}: {e}</h2>", 500
 
@@ -462,6 +517,8 @@ def delete_averages():
 @app.route("/profile")
 @login_required
 def profile():
+    from model import RosteredDrivers
+
     drivers = current_user.drivers.split(",") if current_user.drivers else []
     driver_cards = []
 
@@ -492,6 +549,16 @@ def profile():
         "ZHO": {"name": "Guanyu Zhou", "image": "Guanyu.webp"}
     }
 
+    # Boost tracking
+    boosts = current_user.boosts.split(";") if current_user.boosts else []
+    active_boost = boosts[0].split(":")[1] if boosts and ":" in boosts[0] else ""
+    last_boost = UserRaceResult.query.filter_by(user_id=current_user.id).order_by(UserRaceResult.id.desc()).first()
+    boost_bonus_points = round(last_boost.total_points - last_boost.base_points) if last_boost and last_boost.boosted else 0
+
+    # Get rostered driver data
+    rostered = RosteredDrivers.query.filter_by(user_id=current_user.id).all()
+    driver_data = {r.driver: r for r in rostered}
+
     total_driver_value = 0
     for code in drivers:
         try:
@@ -505,13 +572,22 @@ def profile():
             if value is not None and previous is not None:
                 value_class = "text-success" if value > previous else "text-danger"
 
+            roster = driver_data.get(code)
+            value_at_buy = roster.value_at_buy if roster else 0
+            value_gain = round((value or 0) - value_at_buy, 2) if value_at_buy else 0
+            boost_points = roster.boost_points if roster else 0
+            races_owned = roster.races_owned if roster else 0
+
             driver_cards.append({
                 "code": code,
                 "name": full_name,
                 "image": driver_img_url,
                 "hype": hype,
                 "value": value,
-                "value_class": value_class
+                "value_class": value_class,
+                "value_gain": value_gain,
+                "boost_points": boost_points,
+                "races_owned": races_owned
             })
         except Exception as e:
             print(f"❌ Failed to load driver {code}: {e}")
@@ -525,12 +601,15 @@ def profile():
     return render_template(
         "profile.html",
         user=current_user,
+        active_boost=active_boost,
+        boost_bonus_points=boost_bonus_points,
         driver_cards=driver_cards,
         balance=balance,
         net_worth_delta=net_worth_delta,
         net_worth=net_worth,
         networth_class=networth_class
     )
+
 
 
 
@@ -579,28 +658,53 @@ def logout():
     return redirect("/")
 
 @app.route("/season/<driver>")
+@login_required
 def driver_season_view(driver):
+    from model import UserRaceResult
+
     all_races = []
+    boost_lookup = {}
+
     for year in [2025, 2024, 2023, 2022, 2021]:
         try:
             schedule = fastf1.get_event_schedule(year)
+            schedule = schedule[schedule['EventDate'] < pd.Timestamp.now()]  # ⛔ Filter future races
+
             for _, row in schedule.iterrows():
-                df = calculate_points(year, row["EventName"])
+                gp_name = row["EventName"]
+                df = calculate_single_race(year, gp_name)  # ✅ avoid overwriting last race file
                 if not df.empty and driver in df["Driver"].values:
                     row_df = df[df["Driver"] == driver].copy()
                     row_df["Year"] = year
-                    row_df["Grand Prix"] = row["EventName"]
+                    row_df["Grand Prix"] = gp_name
+
+                    # Check if this user has a boosted record
+                    result = UserRaceResult.query.filter_by(
+                        user_id=current_user.id,
+                        driver=driver,
+                        year=year,
+                        race=gp_name,
+                        boosted=True
+                    ).first()
+
+                    if result:
+                        row_df["Boost Note"] = f"Boosted for +{int(result.total_points - result.base_points)} points"
+                    else:
+                        row_df["Boost Note"] = ""
+
                     all_races.append(row_df)
-        except Exception:
+        except Exception as e:
+            print(f"⚠️ Failed for {year} {driver}: {e}")
             continue
 
     if not all_races:
-        return f"<h2>No race data for {driver}</h2><a href='/'>⬅ Back</a>"
+        return "<h2>⚠️ No data available.</h2><a href='/'>⬅ Back</a>"
 
     df = pd.concat(all_races)
-    df = df[["Year", "Grand Prix", "Quali", "Race", "+Pos", "Q/R/+O", "Total Points"]]
+    df = df[["Year", "Grand Prix", "Quali", "Race", "+Pos", "Q/R/+O", "Total Points", "Boost Note"]]
     df = df.sort_values(by=["Year", "Grand Prix"], ascending=[False, False])
-    return render_template("season.html", table=df.to_html(classes="table table-bordered text-center", index=False))
+    return render_template("season.html", races=df.to_dict(orient="records"))
+
 
 @app.route("/boost/<category>/<driver>", methods=["POST"])
 @login_required

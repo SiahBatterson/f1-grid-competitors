@@ -8,189 +8,201 @@
     />
     <style>
       body {
-        background-color: #f0f2f5;
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f8f9fa;
       }
 
-      .profile-header {
-        text-align: center;
+      .profile-box {
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        padding: 2rem;
         margin-bottom: 2rem;
       }
 
-      .driver-image {
+      .driver-img {
         width: 180px;
         height: 180px;
-        object-fit: cover;
         border-radius: 50%;
+        object-fit: cover;
         border: 4px solid #dee2e6;
-        margin-bottom: 1rem;
       }
 
-      .stat-box {
-        background: #fff;
-        border-radius: 8px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-        margin-bottom: 2rem;
+      .stat-table th,
+      .stat-table td {
+        text-align: center;
+        vertical-align: middle;
       }
 
-      .btn-action {
-        width: 120px;
-        margin: 0 10px;
+      .section-header {
+        font-weight: 600;
+        margin-bottom: 0.75rem;
       }
 
-      .data-card {
-        background: #ffffff;
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        padding: 1rem;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        margin-bottom: 1.5rem;
+      .value-change {
+        font-weight: 600;
       }
 
-      .data-card h5 {
-        font-weight: bold;
+      .badge-custom {
+        background-color: #ffc107;
+        color: #212529;
+        font-size: 0.8rem;
+        margin-left: 0.5rem;
       }
 
-      .data-card table {
-        font-size: 0.95rem;
+      .management-buttons button {
+        width: 100%;
       }
     </style>
   </head>
-  <body class="container mt-5">
-    <div class="profile-header">
-      <img
-        src="{{ driver_img_url }}"
-        alt="{{ driver }} Image"
-        class="driver-image"
-        onerror="this.onerror=null; this.src='https://via.placeholder.com/180';"
-      />
-      <h1 class="fw-bold">{{ driver }}</h1>
-      <p class="text-muted">Driver Profile Overview</p>
-    </div>
-
-    <div class="stat-box text-center">
-      <h3>💰 Current Value</h3>
-      <p class="display-6 fw-semibold" style="color: {{ value_color }}">
-        {{ fantasy_value }} <span class="fs-5">{{ percent_display }}</span>
-      </p>
-      {% if previous_value %}
-      <p class="text-muted">Previously: {{ previous_value }}</p>
-      {% endif %}
-    </div>
-
-    <div class="row">
-      <div class="col-md-6">
-        <div class="data-card">
-          <h5 class="text-center">📈 Last 3 Races</h5>
-          <table class="table table-bordered text-center">
-            <tr>
-              <th>Quali</th>
-              <th>Race</th>
-              <th>+Pos</th>
-              <th>Total Points</th>
-            </tr>
-            <tr>
-              <td>{{ last_3.Quali }}</td>
-              <td>{{ last_3.Race }}</td>
-              <td>{{ last_3["+Pos"] }}</td>
-              <td>{{ last_3["Total Points"] }}</td>
-            </tr>
-          </table>
-        </div>
+  <body class="container py-5">
+    <!-- Header -->
+    <div class="row align-items-center profile-box">
+      <div class="col-md-3 text-center">
+        <img
+          src="{{ driver_img_url }}"
+          alt="{{ driver }} Image"
+          class="driver-img"
+          onerror="this.onerror=null; this.src='https://via.placeholder.com/180';"
+        />
+      </div>
+      <div class="col-md-6 text-center text-md-start">
+        <h2 class="fw-bold">{{ driver }}</h2>
+        <p class="fs-5">
+          💰
+          <strong style="color: {{ value_color }}">{{ fantasy_value }}</strong>
+          <span class="fs-6">{{ percent_display }}</span>
+        </p>
+        {% if previous_value %}
+        <p class="text-muted">Previous Value: {{ previous_value }}</p>
+        {% endif %} {% if user_roster %}
+        <p class="mb-1">
+          📦 Bought at: ${{ user_roster.value_at_buy | round | int | format(',')
+          }}
+        </p>
+        <p
+          class="value-change {{ 'text-success' if user_roster.current_value > user_roster.value_at_buy else 'text-danger' }}"
+        >
+          📈 Value Gained: ${{ (user_roster.current_value -
+          user_roster.value_at_buy) | round | int | format(',') }}
+        </p>
+        <p class="mb-0">
+          🏁 Races Owned: {{ user_roster.races_owned }} | 🚀 Boost Points: {{
+          user_roster.boost_points }}
+        </p>
+        {% endif %}
       </div>
 
-      <div class="col-md-6">
-        <div class="data-card">
-          <h5 class="text-center">📉 Previous 3 Races</h5>
-          <table class="table table-bordered text-center">
-            <tr>
-              <th>Quali</th>
-              <th>Race</th>
-              <th>+Pos</th>
-              <th>Total Points</th>
-            </tr>
-            <tr>
-              <td>{{ prev_3.Quali }}</td>
-              <td>{{ prev_3.Race }}</td>
-              <td>{{ prev_3["+Pos"] }}</td>
-              <td>{{ prev_3["Total Points"] }}</td>
-            </tr>
-          </table>
-        </div>
-      </div>
-
-      <div class="col-md-6">
-        <div class="data-card">
-          <h5 class="text-center">📊 Average</h5>
-          <table class="table table-bordered text-center">
-            <tr>
-              <th>Quali</th>
-              <th>Race</th>
-              <th>+Pos</th>
-              <th>Total Points</th>
-            </tr>
-            <tr>
-              <td>{{ season_avg.Quali }}</td>
-              <td>{{ season_avg.Race }}</td>
-              <td>{{ season_avg["+Pos"] }}</td>
-              <td>{{ season_avg["Total Points"] }}</td>
-            </tr>
-          </table>
-        </div>
-      </div>
-
-      <div class="col-md-6">
-        <div class="data-card">
-          <h5 class="text-center">📍 Last Race</h5>
-          <table class="table table-bordered text-center">
-            <tr>
-              <th>Quali</th>
-              <th>Race</th>
-              <th>+Pos</th>
-              <th>Total Points</th>
-            </tr>
-            <tr>
-              <td>{{ last_race.Quali }}</td>
-              <td>{{ last_race.Race }}</td>
-              <td>{{ last_race["+Pos"] }}</td>
-              <td>{{ last_race["Total Points"] }}</td>
-            </tr>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="text-center my-4">
-      <div class="d-flex flex-column align-items-center gap-2">
+      <!-- Buttons -->
+      <div class="col-md-3 management-buttons mt-4 mt-md-0">
         {% if current_user.is_authenticated %} {% if weekday < 4 %}
         <form method="POST" action="/add_driver/{{ driver }}">
-          <button type="submit" class="btn btn-success w-100">
-            ➕ Purchase
-          </button>
+          <button class="btn btn-success mb-2">➕ Purchase</button>
         </form>
         <form method="POST" action="/remove_driver/{{ driver }}">
-          <button type="submit" class="btn btn-danger w-100">➖ Sell</button>
+          <button class="btn btn-danger mb-2">➖ Sell</button>
         </form>
         {% else %}
-        <div class="alert alert-warning text-center w-100">
-          ⚠️ Driver changes are locked during race weekends (Fri–Sun)
+        <div class="alert alert-warning py-2 text-center">
+          🔒 Driver changes locked (Fri–Sun)
         </div>
         {% endif %} {% else %}
-        <p><a href="/login">Log in</a> to manage your team</p>
+        <p class="text-center">
+          <a href="/login">Log in</a> to manage your team
+        </p>
         {% endif %}
         <a
           href="{{ url_for('driver_season_view', driver=driver) }}"
-          class="btn btn-secondary w-100"
+          class="btn btn-secondary mb-2"
+          >📆 View Season</a
         >
-          📆 View Season
-        </a>
-        <a href="/" class="btn btn-outline-dark w-100">⬅ Back to Home</a>
+        <a href="/" class="btn btn-outline-dark">⬅ Back</a>
       </div>
     </div>
 
-    <div class="text-center">
-      <a href="/" class="btn btn-outline-dark">⬅ Back to Home</a>
+    <!-- Stats Section -->
+    <div class="profile-box">
+      <h4 class="section-header">📊 Driver Performance Summary</h4>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+          <div class="border rounded p-3">
+            <h6 class="text-center mb-3">📈 Last 3 Races</h6>
+            <table class="table table-bordered stat-table">
+              <tr>
+                <th>Quali</th>
+                <th>Race</th>
+                <th>+Pos</th>
+                <th>Pts</th>
+              </tr>
+              <tr>
+                <td>{{ last_3.Quali }}</td>
+                <td>{{ last_3.Race }}</td>
+                <td>{{ last_3["+Pos"] }}</td>
+                <td>{{ last_3["Total Points"] }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="border rounded p-3">
+            <h6 class="text-center mb-3">📉 Prev 3 Races</h6>
+            <table class="table table-bordered stat-table">
+              <tr>
+                <th>Quali</th>
+                <th>Race</th>
+                <th>+Pos</th>
+                <th>Pts</th>
+              </tr>
+              <tr>
+                <td>{{ prev_3.Quali }}</td>
+                <td>{{ prev_3.Race }}</td>
+                <td>{{ prev_3["+Pos"] }}</td>
+                <td>{{ prev_3["Total Points"] }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="border rounded p-3">
+            <h6 class="text-center mb-3">📊 Seasonal Avg</h6>
+            <table class="table table-bordered stat-table">
+              <tr>
+                <th>Quali</th>
+                <th>Race</th>
+                <th>+Pos</th>
+                <th>Pts</th>
+              </tr>
+              <tr>
+                <td>{{ season_avg.Quali }}</td>
+                <td>{{ season_avg.Race }}</td>
+                <td>{{ season_avg["+Pos"] }}</td>
+                <td>{{ season_avg["Total Points"] }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="border rounded p-3">
+            <h6 class="text-center mb-3">📍 Last Race</h6>
+            <table class="table table-bordered stat-table">
+              <tr>
+                <th>Quali</th>
+                <th>Race</th>
+                <th>+Pos</th>
+                <th>Pts</th>
+              </tr>
+              <tr>
+                <td>{{ last_race.Quali }}</td>
+                <td>{{ last_race.Race }}</td>
+                <td>{{ last_race["+Pos"] }}</td>
+                <td>{{ last_race["Total Points"] }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </body>
 </html>

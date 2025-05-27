@@ -34,21 +34,42 @@
     {% if table is defined and table.__class__.__name__ == "DataFrame" %}
     <h1 class="mb-4">🏁 Weighted Driver Rankings</h1>
     <div class="row">
-      {% for index, row in table.iterrows() %}
+      {% for index, row in table.iterrows() %} {% set driver = row['Driver'] %}
+      {% set hype = row['Hype'] %} {% set value = ((hype * 0.1 + hype * 0.9) *
+      250000) | round | int %} {% set user_data = user_driver_data[driver] if
+      user_driver_data and driver in user_driver_data else None %}
+
       <div class="col-md-4">
         <div class="driver-card">
           <img
-            src="/static/driver_photos/{{ row['Driver'] | lower }}.jpg"
-            alt="{{ row['Driver'] }}"
+            src="/static/driver_photos/{{ driver | lower }}.jpg"
+            alt="{{ driver }}"
             class="driver-img"
             onerror="this.src='/static/driver_photos/default.jpg'"
           />
-          <h5>{{ row['Driver'] }}</h5>
-          <p>🔥 Hype: {{ row['Hype'] }}</p>
+          <h5>{{ driver }}</h5>
+
+          {% if user_data %}
+          <p>🔥 Hype: {{ hype }}</p>
+          <p>💰 Current Value: ${{ value | format(',') }}</p>
           <p>
-            💰 Value: ${{ ((row['Hype'] * 0.1 + row['Hype'] * 0.9) * 250000) |
-            round | int | format(',') }}
+            📦 Bought At: ${{ user_data.value_at_buy | round | int | format(',')
+            }}
           </p>
+          <p>
+            📈 Value Gained:
+            <span
+              class="{{ 'text-success' if value > user_data.value_at_buy else 'text-danger' }}"
+            >
+              ${{ (value - user_data.value_at_buy) | int | format(',') }}
+            </span>
+          </p>
+          <p>🏅 Points Gained: {{ user_data.boost_points }}</p>
+          {% else %}
+          <p>🔥 Hype: {{ hype }}</p>
+          <p>💰 Value: ${{ value | format(',') }}</p>
+          <p class="text-muted">Not currently on your team.</p>
+          {% endif %}
         </div>
       </div>
       {% endfor %}
@@ -69,9 +90,9 @@
             <strong>Positions Gained:</strong> {{ race['+Pos'] }}<br />
             <strong>Q/R/+O:</strong> {{ race['Q/R/+O'] }}<br />
             <strong>Total Points:</strong> {{ race['Total Points'] }}<br />
-            {% if race['Boost'] is defined and race['Boost'] %}
+            {% if race['Boost Note'] %}
             <span class="badge bg-warning text-dark"
-              >🚀 Boost Applied: {{ race['Boost'] | capitalize }}</span
+              >{{ race['Boost Note'] }}</span
             >
             {% endif %}
           </p>
