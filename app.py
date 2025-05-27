@@ -11,15 +11,20 @@ from flask_login import LoginManager
 from model import db, User, UserRaceResult
 
 
-from utils import (
-    calculate_points,
-    generate_driver_rating,
-    generate_all_driver_ratings,
+from core_utils import (
     get_all_cached_drivers,
     get_last_processed_race,
-    calculate_single_race,
-    process_latest_race_and_apply_boosts  # 👈 add this line
+    get_cached_race,
+    is_race_cached,
+    fetch_and_cache_race
 )
+from points_utils import (
+    generate_all_driver_ratings,
+    process_latest_race_and_apply_boosts,
+    process_single_race_and_apply_boosts,
+    generate_driver_rating
+)
+
 
 fastf1.Cache.enable_cache("/mnt/f1_cache")
 app = Flask(__name__)
@@ -107,7 +112,8 @@ def admin_calculate_single():
     gp_name = request.form.get("gp_name")
 
     try:
-        df = calculate_single_race(year, gp_name)
+        success, message = process_single_race_and_apply_boosts(year, gp_name)
+        return f"<h3>{message}</h3><a href='/admin/management'>⬅ Back</a>"
         if df.empty:
             return f"<h3>❌ No data calculated for {year} - {gp_name}</h3><a href='/admin/management'>⬅ Back</a>"
         else:
