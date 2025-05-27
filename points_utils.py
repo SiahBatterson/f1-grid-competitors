@@ -169,96 +169,77 @@ def generate_driver_rating(driver):
 
 
 
-def generate_all_driver_ratings():
-    drivers = get_all_cached_drivers()
-    all_driver_dfs = []
-    rating_summary = []
+def generate_driver_rating(driver):
+    print(f"\n🔍 Generating driver rating for: {driver}")
 
-    for driver in drivers:
+    all_dfs = []
+    for year in [2021, 2022, 2023, 2024, 2025]:
+        from fastf1 import get_event_schedule
         try:
-            df, weighted_total, fantasy_value, previous_weighted = generate_driver_rating(driver)
-            if df.empty:
-                print(f"⚠️ Skipping {driver}: empty data.")
-                continue
-
-            df = df.copy()
-
-            if "Year" not in df.columns:
-                print(f"❌ Skipping {driver}: 'Year' column missing from dataframe.")
-                continue
-
-            df_2025 = df[df["Year"] == 2025]
-            print(f"{driver}: {len(df_2025)} races in 2025")
-
-            if df_2025.empty:
-                continue
-
-            # Add scope rows
-            scope_rows = []
-
-            last_3 = df_2025.head(3)
-            prev_3 = df_2025.iloc[1:4]
-
-            if not last_3.empty:
-                row = last_3.mean(numeric_only=True)
-                row["Scope"] = "Last 3 Races Avg"
-                row["Driver"] = driver
-                scope_rows.append(row)
-
-            if not prev_3.empty:
-                row = prev_3.mean(numeric_only=True)
-                row["Scope"] = "Prev 3 Races Avg"
-                row["Driver"] = driver
-                scope_rows.append(row)
-
-            season_row = df_2025.mean(numeric_only=True)
-            season_row["Scope"] = "Seasonal Average"
-            season_row["Driver"] = driver
-            scope_rows.append(season_row)
-
-            if scope_rows:
-                df = pd.concat([df, pd.DataFrame(scope_rows)], ignore_index=True)
-
-            # Save enriched CSV for this driver
-            df.to_csv(os.path.join(CACHE_DIR, f"Driver Rating - {driver}.csv"), index=False)
-
-            # Build summary row if valid
-            if all(pd.notna([weighted_total, fantasy_value, previous_weighted])):
-                rating_summary.append({
-                    "Driver": driver,
-                    "Weighted Total": weighted_total,
-                    "Fantasy Value": fantasy_value,
-                    "Previous Weighted": previous_weighted
-                })
-            else:
-                print(f"⚠️ Skipping summary for {driver}: NaN in stats.")
-
-            # For leaderboard CSV
-            all_driver_dfs.append(df_2025)
-
-            print(f"✅ Generated: {driver}")
-
+            schedule = get_event_schedule(year)
+            schedule = schedule[schedule["EventDate"] < pd.Timestamp.now()]
+            for _, row in schedule.iterrows():
+                gp_name = clean_gp_name(row["EventName"])
+                if is_race_cached(year, gp_name):
+                    df = get_cached_race(year, gp_name)
+                    if not df.empty and driver in df["Driver"].values:
+                        row_df = df[df["Driver"] == driver].copy()
+                        row_df["Year"] = year
+                        row_df["Grand Prix"] = gp_name
+                        row_df["EventDate"] = row["EventDate"]
+                        all_dfs.append(row_df)
         except Exception as e:
-            print(f"❌ Failed: {driver}: {e}")
+            print(f"❌ Failed {year}: {e}")
 
-    # Save quick lookup table for homepage driver stats
-    summary_path = os.path.join(CACHE_DIR, "driver_rating_summary.csv")
-    if rating_summary:
-        summary_df = pd.DataFrame(rating_summary)
-        summary_df = summary_df.sort_values("Weighted Total", ascending=False)
-        summary_df.to_csv(summary_path, index=False)
-        print(f"📊 Saved driver_rating_summary.csv with {len(summary_df)} entries.")
-    else:
-        print("❌ No summary entries generated. Check why df_2025 or values were empty.")
+    if not all_dfs:
+        print("⚠️ No race data found.")
+        return pd.DataFrame(), None, None, None
 
-    # Save per-driver 2025 average stats
-    if all_driver_dfs:
-        combined = pd.concat(all_driver_dfs)
-        combined = combined.drop_duplicates(subset=["Driver", "Grand Prix"])
-        avg_df = combined.groupby("Driver")[["Quali", "Race", "+Pos", "Total Points"]].mean().round(2).reset_index()
-        avg_df = avg_df.sort_values("Total Points", ascending=False)
-        avg_df.to_csv(os.path.join(CACHE_DIR, "averages_2025.csv"), index=False)
-        print("📊 Saved averages_2025.csv")
+    full_df = pd.concat(all_dfs).sort_values("EventDate", ascending=False)
+
+    print("\n📋 All races used:")
+    print(full_df[["Year", "Grand Prix", "Quali", "Race", "+Pos", "Total Points"]])
+
+    last_3 = full_df.head(3)
+    prev_3 = full_df.iloc[1:4]
+
+    seasonal_avg = full_df["Total Points"].mean()
+    last_3_avg = last_3["Total Points"].mean()
+    last_race = full_df.iloc[0]["Total Points"]
+    prev_last = full_df.iloc[1]["Total Points"] if len(full_df) > 1 else last_race
+
+    weighted_total = round(seasonal_avg * 0.6 + last_3_avg * 0.2 + last_race * 0.2, 2)
+    previous_weighted = round(seasonal_avg * 0.6 + prev_3["Total Points"].mean() * 0.2 + prev_last * 0.2, 2)
+    fantasy_value = round(((seasonal_avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
+
+    # Add scope rows for UI rendering
+    df = full_df.copy()
+    df_2025 = df[df["Year"] == 2025]
+    scope_rows = []
+
+    if not df_2025.empty:
+        if not last_3.empty:
+            row = last_3.mean(numeric_only=True)
+            row["Scope"] = "Last 3 Races Avg"
+            row["Driver"] = driver
+            scope_rows.append(row)
+
+        if not prev_3.empty:
+            row = prev_3.mean(numeric_only=True)
+            row["Scope"] = "Prev 3 Races Avg"
+            row["Driver"] = driver
+            scope_rows.append(row)
+
+        season_row = df_2025.mean(numeric_only=True)
+        season_row["Scope"] = "Seasonal Average"
+        season_row["Driver"] = driver
+        scope_rows.append(season_row)
+
+        if scope_rows:
+            df = pd.concat([df, pd.DataFrame(scope_rows)], ignore_index=True)
+
+    return df, weighted_total, fantasy_value, previous_weighted
+
 
 
 
