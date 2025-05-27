@@ -9,10 +9,17 @@ fastf1.Cache.enable_cache(CACHE_DIR)
 def calculate_points(year, gp_name):
     cache_path = os.path.join(CACHE_DIR, f"{year} - {gp_name}.csv")
     if os.path.exists(cache_path):
-        last_race_path = os.path.join(CACHE_DIR, f"{year} - LastProcessedRace.txt")
-        with open(last_race_path, "w") as f:
-            f.write(f"{year} - {gp_name}")
-        return pd.read_csv(cache_path)
+        cached_df = pd.read_csv(cache_path)
+        # Check for minimal validity (non-empty + expected columns)
+        required_cols = {'Driver', 'Quali', 'Race', '+Pos', 'Q/R/+O', 'Total Points'}
+        if not cached_df.empty and required_cols.issubset(set(cached_df.columns)):
+            last_race_path = os.path.join(CACHE_DIR, f"{year} - LastProcessedRace.txt")
+            with open(last_race_path, "w") as f:
+                f.write(f"{year} - {gp_name}")
+            return cached_df
+        else:
+            print(f"⚠️ Cache for {year} - {gp_name} is invalid. Refetching...")
+
 
     try:
         event = fastf1.get_event(year, gp_name)
