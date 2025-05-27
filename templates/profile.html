@@ -57,8 +57,8 @@
             </p>
             <p class="mb-1">
               📈 Value Gained:
-              <strong class="{{ card.value_delta_class }}">
-                ${{ "{:,.0f}".format(card.value_delta) }}
+              <strong class="{{ card.delta_class }}">
+                ${{ "{:,.0f}".format(card.delta) }}
               </strong>
             </p>
             <p class="mb-1">
@@ -90,8 +90,8 @@
     <!-- 🚀 Boosts -->
     <h4 class="text-center mb-3 mt-5">🚀 Boosts</h4>
     <div class="row row-cols-1 row-cols-md-3 g-3 text-center">
-      {% for boost in ['qualifying', 'race', 'pass'] %} {% if active_boost and
-      active_boost != boost %} {% continue %} {% endif %}
+      {% for boost in ['qualifying', 'race', 'pass'] %} {% if not active_boost
+      or active_boost == boost %}
       <div class="col">
         <div
           class="card h-100 shadow-sm border-{{ 'success' if active_boost == boost else 'primary' }}"
@@ -117,7 +117,7 @@
           </div>
         </div>
       </div>
-      {% endfor %}
+      {% endif %} {% endfor %}
     </div>
 
     <div class="text-center mt-5">
