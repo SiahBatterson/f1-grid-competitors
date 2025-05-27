@@ -45,7 +45,6 @@ CACHE_DIR = "/mnt/f1_cache"
 
 @app.route("/")
 def home():
-    from utils import get_all_cached_drivers, generate_driver_rating
 
     drivers = get_all_cached_drivers()
     top_drivers = []
