@@ -84,20 +84,18 @@
         </p>
         {% if previous_value %}
         <p class="text-muted">Previous Value: {{ previous_value }}</p>
-        {% endif %} {% if user_roster %}
+        {% endif %} {% if user_stats %}
         <p class="mb-1">
-          📦 Bought at: ${{ user_roster.value_at_buy | round | int | format(',')
-          }}
+          📦 Bought at: ${{ user_stats.value_at_buy | format(',') }}
         </p>
         <p
-          class="value-change {{ 'text-success' if user_roster.current_value > user_roster.value_at_buy else 'text-danger' }}"
+          class="value-change {{ 'text-success' if user_stats.value_diff > 0 else 'text-danger' }}"
         >
-          📈 Value Gained: ${{ (user_roster.current_value -
-          user_roster.value_at_buy) | round | int | format(',') }}
+          📈 Value Gained: ${{ user_stats.value_diff | format(',') }}
         </p>
         <p class="mb-0">
-          🏁 Races Owned: {{ user_roster.races_owned }} | 🚀 Boost Points: {{
-          user_roster.boost_points }}
+          🏁 Races Owned: {{ user_stats.races_owned }} | 🚀 Boost Points: {{
+          user_stats.boost_points }}
         </p>
         {% endif %}
       </div>
@@ -151,5 +149,37 @@
         {% endfor %}
       </div>
     </div>
+
+    {% if last_3_scored %}
+    <div class="profile-box mt-4">
+      <h4 class="section-header text-center">🕒 Last 3 Scored Races</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered stat-table text-center">
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Grand Prix</th>
+              <th>Quali</th>
+              <th>Race</th>
+              <th>+Pos</th>
+              <th>Total Pts</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for race in last_3_scored %}
+            <tr>
+              <td>{{ race.Year }}</td>
+              <td>{{ race["Grand Prix"] }}</td>
+              <td>{{ race.Quali }}</td>
+              <td>{{ race.Race }}</td>
+              <td>{{ race["+Pos"] }}</td>
+              <td>{{ race["Total Points"] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
   </body>
 </html>

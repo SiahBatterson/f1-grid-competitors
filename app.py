@@ -205,11 +205,17 @@ def generate_driver_rating_route():
         if df.empty:
             return f"<h2>❌ No data available for {driver}</h2><a href='/'>⬅ Back</a>", 404
 
+        # Filter clean rows
+        real_races_df = df[df["Scope"].isna()].sort_values(by=["Year", "Grand Prix"], ascending=False)
+
         # Stat rows
         season_avg_row = df[df["Scope"] == "Seasonal Average"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
         last_3_row = df[df["Scope"] == "Last 3 Races Avg"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
         prev_3_row = df[df["Scope"] == "Prev 3 Races Avg"].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
-        last_race_row = df[df["Scope"].isna()].iloc[0:1].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
+        last_race_row = real_races_df.iloc[0:1].drop(columns=["Q/R/+O", "Year", "Grand Prix"])
+
+        # NEW: Last 3 scored races
+        last_3_scored = real_races_df.head(3).drop(columns=["Q/R/+O", "Scope"]).to_dict(orient="records")
 
         fantasy_value_display = f"${round(fantasy_value):,}" if fantasy_value else "N/A"
         previous_value = (
@@ -248,12 +254,14 @@ def generate_driver_rating_route():
             last_3=last_3_row.to_dict(orient="records")[0],
             prev_3=prev_3_row.to_dict(orient="records")[0],
             last_race=last_race_row.to_dict(orient="records")[0],
+            last_3_scored=last_3_scored,
             weekday=weekday,
             user_stats=user_stats
         )
 
     except Exception as e:
         return f"<h2>❌ Failed to generate rating: {e}</h2><a href='/'>⬅ Back</a>", 500
+
 
 
 @app.route("/admin/management")
