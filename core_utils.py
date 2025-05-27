@@ -142,7 +142,8 @@ def clean_gp_name(gp_name):
 
 def delete_duplicate_grand_prix_files():
     seen = {}
-    deleted = []
+    to_delete = []
+    renamed = []
 
     for file in os.listdir(CACHE_DIR):
         if not file.endswith(".csv") or " - " not in file:
@@ -151,18 +152,36 @@ def delete_duplicate_grand_prix_files():
         try:
             year, raw_gp = file.replace(".csv", "").split(" - ", 1)
             clean_name = clean_gp_name(raw_gp)
-            key = f"{year} - {clean_name}"
+            clean_filename = f"{year} - {clean_name}.csv"
 
-            if key in seen:
-                # This is a duplicate
-                path = os.path.join(CACHE_DIR, file)
-                os.remove(path)
-                deleted.append(file)
+            original_path = os.path.join(CACHE_DIR, file)
+            clean_path = os.path.join(CACHE_DIR, clean_filename)
+
+            # Case 1: Needs renaming due to duplicate 'Grand Prix'
+            if raw_gp != clean_name and not os.path.exists(clean_path):
+                os.rename(original_path, clean_path)
+                renamed.append((file, clean_filename))
+                seen[clean_filename] = clean_path
+
+            # Case 2: Duplicate — delete
+            elif clean_filename in seen or os.path.exists(clean_path):
+                to_delete.append(original_path)
+
             else:
-                seen[key] = file
-        except Exception as e:
-            print(f"❌ Error processing file {file}: {e}")
+                seen[clean_filename] = original_path
 
-    print(f"✅ Deleted {len(deleted)} duplicate GP files:")
-    for f in deleted:
-        print(f" - {f}")
+        except Exception as e:
+            print(f"❌ Error processing {file}: {e}")
+
+    for path in to_delete:
+        try:
+            os.remove(path)
+            print(f"🗑️ Deleted duplicate: {os.path.basename(path)}")
+        except Exception as e:
+            print(f"❌ Failed to delete {path}: {e}")
+
+    for old, new in renamed:
+        print(f"🔁 Renamed: {old} ➡️ {new}")
+
+    print(f"\n✅ Cleanup complete. {len(renamed)} renamed, {len(to_delete)} deleted.")
+

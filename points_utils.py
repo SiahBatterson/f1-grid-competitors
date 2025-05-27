@@ -142,12 +142,46 @@ def generate_driver_rating(driver):
 
 def generate_all_driver_ratings():
     drivers = get_all_cached_drivers()
+    all_dfs = []
+
     for driver in drivers:
         try:
-            generate_driver_rating(driver)
+            df, weighted_total, fantasy_value, previous_weighted = generate_driver_rating(driver)
+            if not df.empty:
+                # Add scope rows
+                season_avg = df[df["Year"] == 2025]["Total Points"].mean()
+                last_3 = df[df["Year"] == 2025].head(3)
+                prev_3 = df[df["Year"] == 2025].iloc[1:4]
+
+                if not last_3.empty:
+                    last_3_row = last_3.mean(numeric_only=True)
+                    last_3_row["Scope"] = "Last 3 Races Avg"
+                    df = pd.concat([df, pd.DataFrame([last_3_row])], ignore_index=True)
+
+                if not prev_3.empty:
+                    prev_3_row = prev_3.mean(numeric_only=True)
+                    prev_3_row["Scope"] = "Prev 3 Races Avg"
+                    df = pd.concat([df, pd.DataFrame([prev_3_row])], ignore_index=True)
+
+                season_avg_row = df[df["Year"] == 2025].mean(numeric_only=True)
+                season_avg_row["Scope"] = "Seasonal Average"
+                df = pd.concat([df, pd.DataFrame([season_avg_row])], ignore_index=True)
+
+                all_dfs.append(df[df["Year"] == 2025])
             print(f"✅ Generated: {driver}")
         except Exception as e:
             print(f"❌ Failed: {driver}: {e}")
+
+    if all_dfs:
+        combined = pd.concat(all_dfs)
+        combined = combined[combined["Year"] == 2025]
+        combined = combined.drop_duplicates(subset=["Driver", "Grand Prix"])
+        avg_df = combined.groupby("Driver")[["Quali", "Race", "+Pos", "Total Points"]].mean().round(2).reset_index()
+        avg_df = avg_df.sort_values("Total Points", ascending=False)
+        avg_df.to_csv(os.path.join(CACHE_DIR, "averages_2025.csv"), index=False)
+        print("📊 Updated averages_2025.csv")
+
+
 
 
 def clean_gp_name(gp_name):
