@@ -77,7 +77,6 @@ def fetch_and_cache_race(year, gp_name):
         print(f"❌ Error caching {year} - {gp_name}: {e}")
         return False
 
-
 def preload_race_data_until(year_limit=2025, stop_gp="Miami Grand Prix"):
     print(f"🔁 Preloading races up to {year_limit} - {stop_gp}")
     for year in range(2021, year_limit + 1):
@@ -95,9 +94,27 @@ def preload_race_data_until(year_limit=2025, stop_gp="Miami Grand Prix"):
 
         for _, row in schedule.iterrows():
             gp_name = row["EventName"]
-            if not is_race_cached(year, gp_name):
+            path = os.path.join(CACHE_DIR, f"{year} - {gp_name}.csv")
+
+            # Cache if not already done or if missing EventDate
+            recache = False
+            if os.path.exists(path):
+                try:
+                    df = pd.read_csv(path)
+                    if "EventDate" not in df.columns:
+                        print(f"♻️ Refreshing {year} - {gp_name}: missing EventDate")
+                        recache = True
+                except Exception as e:
+                    print(f"⚠️ Could not read {path}, forcing re-cache: {e}")
+                    recache = True
+            else:
+                recache = True
+
+            if recache:
                 fetch_and_cache_race(year, gp_name)
+
     print("✅ Preload complete.")
+
 
 
 def get_all_cached_drivers():
