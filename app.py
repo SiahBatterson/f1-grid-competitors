@@ -709,10 +709,9 @@ def profile():
     balance = current_user.balance
     net_worth = balance + total_driver_value
     networth_class = "text-success" if net_worth >= 15000000 else "text-danger"
-    raw_boosts = current_user.boosts.split(";") if current_user.boosts else []
-    parsed_boosts = {b.split(":")[0]: b.split(":")[1] for b in raw_boosts if ":" in b}
-    available_boosts = list(parsed_boosts.keys())
-    active_boost = list(parsed_boosts.values())[0] if parsed_boosts else ""
+    boost_pairs = [b.split(":") for b in current_user.boosts.split(";") if ":" in b]
+    available_boosts = [k for k, _ in boost_pairs]
+    active_boost = next((k for k, v in boost_pairs if v == "active"), "")
     net_worth_delta = net_worth - 15000000
 
     return render_template(
