@@ -27,7 +27,6 @@
     </div>
     {% endif %}
 
-    <!-- 📊 Net Worth -->
     <div class="text-center mb-4">
       <h4>💼 Net Worth:</h4>
       <h2>${{ "{:,.0f}".format(net_worth) }}</h2>
@@ -37,13 +36,11 @@
       </p>
     </div>
 
-    <!-- 💰 Balance -->
     <div class="text-center mb-5">
       <h4>💰 Balance:</h4>
       <h2>${{ "{:,.0f}".format(user.balance) }}</h2>
     </div>
 
-    <!-- 🏎️ Driver Cards -->
     <h4 class="mb-3">🏎️ Your Team</h4>
     {% if driver_cards %}
     <div class="row row-cols-1 row-cols-md-3 g-4">
@@ -71,16 +68,14 @@
               </strong>
             </p>
             <p class="mb-1">
-              🏅 Points Gained:
-              <strong>{{ card.boost_points }}</strong>
+              🏅 Points Gained: <strong>{{ card.boost_points }}</strong>
             </p>
             <div class="d-grid gap-2 mt-3">
               <a
                 href="/generate_driver_rating?driver={{ card.code }}"
                 class="btn btn-outline-secondary btn-sm"
+                >⚙️ Manage</a
               >
-                ⚙️ Manage
-              </a>
               <form method="POST" action="/remove_driver/{{ card.code }}">
                 <button class="btn btn-outline-danger btn-sm w-100">
                   ➖ Sell Driver
@@ -99,12 +94,12 @@
     <!-- 🚀 Boosts -->
     <h4 class="text-center mb-3 mt-5">🚀 Boosts</h4>
     <div class="row row-cols-1 row-cols-md-3 g-3 text-center">
-      {% if active_boost %} {% set boosts = [active_boost] %} {% else %} {% set
-      boosts = ['qualifying', 'race', 'pass'] %} {% endif %} {% for boost in
-      boosts %}
+      {% set all_boosts = ['qualifying', 'race', 'pass'] %} {% for boost in
+      all_boosts %} {% set is_owned = boost in available_boosts %} {% set
+      is_active = boost == active_boost %}
       <div class="col">
         <div
-          class="card h-100 shadow-sm border-{{ 'success' if active_boost == boost else 'primary' }}"
+          class="card h-100 shadow-sm border-{{ 'success' if is_active else 'primary' }}"
         >
           <div class="card-body">
             <h5 class="card-title">
@@ -112,16 +107,21 @@
               'race' %}🏁 Race Boost {% else %}🚀 Pass Boost {% endif %}
             </h5>
 
-            {% if active_boost == boost %}
-            <p class="text-success fw-bold mb-2">✅ Purchased</p>
+            {% if is_active %}
+            <p class="text-success fw-bold mb-2">✅ Active</p>
             {% if boost_bonus_points is defined %}
             <p class="mb-0">
               💥 Bonus Earned: <strong>{{ boost_bonus_points }}</strong> pts
             </p>
-            {% endif %} {% else %}
-            <p class="text-muted mb-3">Cost: $1,000,000</p>
+            {% endif %} {% elif is_owned %}
+            <p class="text-success fw-bold mb-2">✅ Owned</p>
             <form method="POST" action="/boost/{{ boost }}">
               <button class="btn btn-outline-primary w-100">Activate</button>
+            </form>
+            {% else %}
+            <p class="text-muted mb-3">Cost: $1,000,000</p>
+            <form method="POST" action="/boost/{{ boost }}">
+              <button class="btn btn-outline-primary w-100">Purchase</button>
             </form>
             {% endif %}
           </div>
