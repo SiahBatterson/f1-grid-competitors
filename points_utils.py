@@ -3,7 +3,6 @@ import pandas as pd
 from datetime import datetime
 from core_utils import get_cached_race, is_race_cached, get_all_cached_drivers
 from model import User, UserRaceResult, RosteredDrivers
-raise RuntimeError("💥 points_utils.py should not be imported silently")
 CACHE_DIR = "/mnt/f1_cache"
 
 def calculate_points_from_df(df):
