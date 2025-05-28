@@ -71,15 +71,15 @@ def apply_boosts(df, race_name, year):
     return "✅ Boosts applied and driver stats updated"
 
 def process_latest_race_and_apply_boosts():
+    from core_utils import get_most_recent_race_by_event_date
     from fastf1 import get_event_schedule
-    schedule = get_event_schedule(datetime.now().year)
-    past_races = schedule[schedule["EventDate"] < pd.Timestamp.now()]
-    if past_races.empty:
-        return False, "⚠️ No races found."
 
-    latest = past_races.iloc[-1]
-    year = latest["EventDate"].year
-    gp_name = clean_gp_name(latest["EventName"])
+    last_race_info = get_most_recent_race_by_event_date()
+    if not last_race_info:
+        return False, "⚠️ No races with EventDate found in cache."
+
+    year = int(last_race_info["year"])
+    gp_name = clean_gp_name(last_race_info["gp_name"])
 
     if not is_race_cached(year, gp_name):
         return False, f"❌ Race not cached: {year} - {gp_name}"
@@ -89,7 +89,12 @@ def process_latest_race_and_apply_boosts():
         return False, f"❌ Empty data for {gp_name}"
 
     apply_boosts(df, gp_name, year)
-    return True, f"✅ Boosts applied for {gp_name}"
+
+    # Regenerate driver ratings and leaderboard to reflect boosts and race impact
+    generate_all_driver_ratings()
+
+    return True, f"✅ Boosts applied and stats updated for {gp_name}"
+
 
 def process_single_race_and_apply_boosts(driver_code, year, gp_name):
     df = get_cached_race(year, gp_name)
@@ -232,7 +237,7 @@ def generate_all_driver_ratings():
             # Add scope rows
             scope_rows = []
 
-            df_2025_real = full_df[(full_df["Year"] == 2025) & (full_df["Scope"].isna())].sort_values("EventDate", ascending=True)
+            df_2025_real = df[(df["Year"] == 2025) & (df["Scope"].isna())].sort_values("EventDate", ascending=True)
 
             last_3 = df_2025_real.tail(3)
             prev_3 = df_2025_real.iloc[-4:-1]
