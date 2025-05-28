@@ -45,7 +45,6 @@ CACHE_DIR = "/mnt/f1_cache"
 
 @app.route("/")
 def home():
-
     drivers = get_all_cached_drivers()
     top_drivers = []
     driver_values = {}
@@ -58,31 +57,36 @@ def home():
                 raise FileNotFoundError
 
             df = pd.read_csv(path)
-            seasonal_row = df[df["Scope"] == "Seasonal Average"]
-            last_race_row = df[df["Scope"].isna()]
 
-            if not seasonal_row.empty and not last_race_row.empty:
-                seasonal_avg = seasonal_row["Total Points"].values[0]
-                last_points = last_race_row["Total Points"].iloc[0]
-                fantasy_value = ((seasonal_avg * 0.9) + (last_points * 0.1)) * 250000
+            seasonal = df[df["Scope"] == "Seasonal Average"]
+            career = df[df["Scope"] == "Career Average"]
+            last_3 = df[df["Scope"] == "Last 3 Races Avg"]
+            last_race = df[df["Scope"].isna()]
+
+            seasonal_avg = seasonal["Total Points"].values[0] if not seasonal.empty else None
+            career_avg = career["Total Points"].values[0] if not career.empty else None
+            last_3_avg = last_3["Total Points"].values[0] if not last_3.empty else None
+            last_points = last_race["Total Points"].iloc[0] if not last_race.empty else None
+
+            if seasonal_avg is not None and career_avg is not None and last_3_avg is not None:
+                fantasy_value = (career_avg * 0.1 + seasonal_avg * 0.7 + last_3_avg * 0.2) * 250000
             else:
                 fantasy_value = None
-                last_points = None
-
-            top_drivers.append({
-                "driver": d,
-                "points": round(last_points, 2) if last_points else 0,
-                "value": f"${fantasy_value:,.0f}" if fantasy_value else "N/A"
-            })
 
             driver_values[d] = f"${fantasy_value:,.0f}" if fantasy_value else "N/A"
             driver_points[d] = round(last_points, 2) if last_points else "N/A"
+
+            if last_3_avg is not None:
+                top_drivers.append({
+                    "driver": d,
+                    "points": round(last_3_avg, 2),
+                    "value": f"${fantasy_value:,.0f}" if fantasy_value else "N/A"
+                })
 
         except Exception as e:
             print(f"⚠️ {d}: {e}")
             driver_values[d] = "N/A"
             driver_points[d] = "N/A"
-
 
     top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
 
@@ -110,9 +114,11 @@ def home():
         "DOO": "Jack Doohan"
     }
 
-    last_race_used = "Miami 2025"
+    last_race_used = get_last_processed_race() or "Unknown"
+
     print("✅ Drivers:", drivers)
     print("✅ Top Drivers:", top_drivers)
+
     return render_template(
         "home.html",
         drivers=drivers,
@@ -122,6 +128,7 @@ def home():
         driver_values=driver_values,
         driver_points=driver_points
     )
+
 
 
 @app.route("/admin/reset_user/<int:user_id>", methods=["POST"])
