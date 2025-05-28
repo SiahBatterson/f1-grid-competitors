@@ -309,31 +309,48 @@ def regenerate_driver_rating_summary():
         try:
             df = pd.read_csv(path)
             driver = df["Driver"].dropna().iloc[0]
+
+            # Ensure Scope column exists and normalize it
+            if "Scope" not in df.columns:
+                df["Scope"] = None
+
+            real_races = df[df["Scope"].isna()].sort_values("EventDate", ascending=True)
+            if real_races.empty:
+                continue
+
             seasonal_row = df[df["Scope"] == "Seasonal Average"]
+            last3_row = df[df["Scope"] == "Last 3 Races Avg"]
+            prev3_row = df[df["Scope"] == "Prev 3 Races Avg"]
+
             if seasonal_row.empty:
                 continue
 
             avg = seasonal_row["Total Points"].values[0]
-            last3_row = df[df["Scope"] == "Last 3 Races Avg"]
             last3 = last3_row["Total Points"].values[0] if not last3_row.empty else avg
-            last_race = df[df["Scope"]].iloc[0]["Total Points"]
+            prev_last = real_races.iloc[-2]["Total Points"] if len(real_races) > 1 else real_races.iloc[-1]["Total Points"]
+            last_race = real_races.iloc[-1]["Total Points"]
 
             weighted_total = round(avg * 0.6 + last3 * 0.2 + last_race * 0.2, 2)
+            previous_weighted = round(avg * 0.6 + (prev3_row["Total Points"].values[0] if not prev3_row.empty else last3) * 0.2 + prev_last * 0.2, 2)
             fantasy_value = round(((avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
 
             rows.append({
                 "Driver": driver,
                 "Weighted Total": weighted_total,
                 "Fantasy Value": fantasy_value,
-                "Previous Weighted": round(avg * 0.6 + last3 * 0.2 + df[df["Scope"]].iloc[1]["Total Points"] * 0.2, 2)
+                "Previous Weighted": previous_weighted
             })
         except Exception as e:
             print(f"❌ Failed to parse {file}: {e}")
 
     if rows:
         summary_df = pd.DataFrame(rows)
+        summary_df = summary_df.sort_values("Weighted Total", ascending=False)
         summary_df.to_csv(os.path.join(CACHE_DIR, "driver_rating_summary.csv"), index=False)
         print("✅ Rebuilt driver_rating_summary.csv")
+    else:
+        print("⚠️ No rows to write.")
+
 
 
 
