@@ -149,7 +149,7 @@ def generate_driver_rating(driver):
     seasonal_avg = full_df["Total Points"].mean()
     last_3_avg = last_3["Total Points"].mean()
     df_2025 = full_df[full_df["Year"] == 2025]
-    df_2025 = df_2025[df_2025["Scope"].isna()]  # exclude scoped rows
+    df_2025 = df_2025[df_2025["Scope"]]  # exclude scoped rows
 
     df_2025_sorted = df_2025.sort_values("EventDate", ascending=True)
 
@@ -214,7 +214,7 @@ def generate_all_driver_ratings():
                 print(f"❌ Skipping {driver}: 'Year' or 'EventDate' column missing.")
                 continue
 
-            df_2025 = df[(df["Year"] == 2025) & (df["Scope"].isna())]
+            df_2025 = df[(df["Year"] == 2025) & (df["Scope"])]
             df_2025 = df_2025.sort_values("EventDate", ascending=True)
             print(f"{driver}: {len(df_2025)} races in 2025")
 
@@ -310,7 +310,7 @@ def regenerate_driver_rating_summary():
             avg = seasonal_row["Total Points"].values[0]
             last3_row = df[df["Scope"] == "Last 3 Races Avg"]
             last3 = last3_row["Total Points"].values[0] if not last3_row.empty else avg
-            last_race = df[df["Scope"].isna()].iloc[0]["Total Points"]
+            last_race = df[df["Scope"]].iloc[0]["Total Points"]
 
             weighted_total = round(avg * 0.6 + last3 * 0.2 + last_race * 0.2, 2)
             fantasy_value = round(((avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
@@ -319,7 +319,7 @@ def regenerate_driver_rating_summary():
                 "Driver": driver,
                 "Weighted Total": weighted_total,
                 "Fantasy Value": fantasy_value,
-                "Previous Weighted": round(avg * 0.6 + last3 * 0.2 + df[df["Scope"].isna()].iloc[1]["Total Points"] * 0.2, 2)
+                "Previous Weighted": round(avg * 0.6 + last3 * 0.2 + df[df["Scope"]].iloc[1]["Total Points"] * 0.2, 2)
             })
         except Exception as e:
             print(f"❌ Failed to parse {file}: {e}")
