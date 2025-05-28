@@ -860,6 +860,7 @@ def activate_boost(category, driver):
 
 @app.route("/update_latest_race", methods=["POST"])
 def update_latest_race():
+    from points_utils import process_latest_race_and_apply_boosts
     success, message = process_latest_race_and_apply_boosts()
     return f"<h2>{message}</h2><a href='/'>⬅ Back</a>"
 

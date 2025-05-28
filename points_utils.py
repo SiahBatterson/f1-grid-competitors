@@ -149,6 +149,8 @@ def process_latest_race_and_apply_boosts():
     from core_utils import get_most_recent_race_by_event_date
     from fastf1 import get_event_schedule
 
+    print("starting process latest")
+
     last_race_info = get_most_recent_race_by_event_date()
     if not last_race_info:
         print("Failed on:  if not last_race_info" )
