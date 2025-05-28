@@ -151,16 +151,19 @@ def process_latest_race_and_apply_boosts():
 
     last_race_info = get_most_recent_race_by_event_date()
     if not last_race_info:
+        print("Failed on:  if not last_race_info" )
         return False, "⚠️ No races with EventDate found in cache."
 
     year = int(last_race_info["year"])
     gp_name = clean_gp_name(last_race_info["gp_name"])
 
     if not is_race_cached(year, gp_name):
+        print("Failed on:  if not if not is_race_cached" )
         return False, f"❌ Race not cached: {year} - {gp_name}"
 
     df = get_cached_race(year, gp_name)
     if df.empty:
+        print("Failed on: if df.empty" )
         return False, f"❌ Empty data for {gp_name}"
 
     apply_boosts(df, gp_name, year)
