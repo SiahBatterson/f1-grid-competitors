@@ -23,7 +23,8 @@ from points_utils import (
     generate_all_driver_ratings,
     process_latest_race_and_apply_boosts,
     process_single_race_and_apply_boosts,
-    generate_driver_rating
+    generate_driver_rating,
+    calculate_fantasy_value
 )
 
 
@@ -69,7 +70,7 @@ def home():
             last_points = last_race["Total Points"].iloc[0] if not last_race.empty else None
 
             if seasonal_avg is not None and career_avg is not None and last_3_avg is not None:
-                fantasy_value = (career_avg * 0.1 + seasonal_avg * 0.7 + last_3_avg * 0.2) * 250000
+                fantasy_value = calculate_fantasy_value(career_avg, seasonal_avg, last_3_avg)
             else:
                 fantasy_value = None
 
