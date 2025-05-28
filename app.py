@@ -52,31 +52,37 @@ def home():
     driver_points = {}
 
     for d in drivers:
-        try:
-            path = os.path.join(CACHE_DIR, f"Driver Rating - {d}.csv")
-            if not os.path.exists(path):
-                raise FileNotFoundError
+    try:
+        path = os.path.join(CACHE_DIR, f"Driver Rating - {d}.csv")
+        if not os.path.exists(path):
+            raise FileNotFoundError
 
-            df = pd.read_csv(path)
-            value_row = df[df["Scope"] == "Seasonal Average"]
-            value = value_row["Value"].iloc[0] if not value_row.empty else None
+        df = pd.read_csv(path)
+        seasonal_row = df[df["Scope"] == "Seasonal Average"]
+        last_race_row = df[df["Scope"].isna()]
 
-            last_race = df[df["Scope"].isna()]
-            last_points = last_race["Total Points"].iloc[0] if not last_race.empty else 0
+        if not seasonal_row.empty and not last_race_row.empty:
+            seasonal_avg = seasonal_row["Total Points"].values[0]
+            last_points = last_race_row["Total Points"].iloc[0]
+            fantasy_value = ((seasonal_avg * 0.9) + (last_points * 0.1)) * 250000
+        else:
+            fantasy_value = None
+            last_points = None
 
-            top_drivers.append({
-                "driver": d,
-                "points": last_points,
-                "value": f"${value:,.0f}" if value else "N/A"
-            })
+        top_drivers.append({
+            "driver": d,
+            "points": round(last_points, 2) if last_points else 0,
+            "value": f"${fantasy_value:,.0f}" if fantasy_value else "N/A"
+        })
 
-            driver_values[d] = f"${value:,.0f}" if value else "N/A"
-            driver_points[d] = round(last_points, 2)
+        driver_values[d] = f"${fantasy_value:,.0f}" if fantasy_value else "N/A"
+        driver_points[d] = round(last_points, 2) if last_points else "N/A"
 
-        except Exception:
-            driver_values[d] = "N/A"
-            driver_points[d] = "N/A"
-            continue
+    except Exception as e:
+        print(f"⚠️ {d}: {e}")
+        driver_values[d] = "N/A"
+        driver_points[d] = "N/A"
+
 
     top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
 
