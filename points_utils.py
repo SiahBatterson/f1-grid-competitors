@@ -28,40 +28,56 @@ def clean_gp_name(gp_name):
 
 def apply_boosts(df, race_name, year):
     from app import db
-    users = User.query.all()
+    print("🔧 Starting boost application...")
     
+    users = User.query.all()
+    print(f"👥 Loaded {len(users)} users.")
+
     for user in users:
+        print(f"📄 Processing user: {user.username} (ID: {user.id})")
+
         user_drivers = user.drivers.split(",") if user.drivers else []
+        print(f"  🚗 Rostered drivers: {user_drivers}")
+
         user_boosts = {
             b.split(":")[0]: b.split(":")[1]
             for b in user.boosts.split(";") if ":" in b
         }
+        print(f"  🚀 Active boosts: {user_boosts}")
 
         for driver in user_drivers:
+            print(f"    🏁 Checking driver: {driver}")
             row = df[df["Driver"] == driver]
             if row.empty:
+                print(f"    ⚠️ No row found for driver {driver} in this race.")
                 continue
 
             user_driver = RosteredDrivers.query.filter_by(user_id=user.id, driver=driver).first()
             if not user_driver:
-                print(f"⚠️ {user.username} has no rostered entry for {driver}")
+                print(f"    ⚠️ RosteredDrivers entry not found for {driver}")
                 continue
 
             base_points = float(row["Total Points"])
+            print(f"    🎯 Base points for {driver}: {base_points}")
+
             boost_type = user_boosts.get(driver)
+            print(f"    💡 Boost type: {boost_type}")
             bonus = 0
 
-            if boost_type == "qualifying":
-                bonus = (21 - int(row["Quali"])) * 3
-            elif boost_type == "race":
-                bonus = (21 - int(row["Race"]))
-            elif boost_type == "pass":
-                bonus = int(row["+Pos"]) * 2
+            try:
+                if boost_type == "qualifying":
+                    bonus = (21 - int(row["Quali"])) * 3
+                elif boost_type == "race":
+                    bonus = (21 - int(row["Race"]))
+                elif boost_type == "pass":
+                    bonus = int(row["+Pos"]) * 2
+            except Exception as e:
+                print(f"    ❌ Failed to calculate bonus: {e}")
 
+            print(f"    ➕ Bonus points: {bonus}")
             total = base_points + bonus
             boosted = bool(boost_type)
 
-            # Save the race result
             result = UserRaceResult(
                 user_id=user.id,
                 driver=driver,
@@ -72,29 +88,37 @@ def apply_boosts(df, race_name, year):
                 boosted=boosted,
                 total_points=total,
             )
+            print(f"    📄 Adding UserRaceResult row...")
             db.session.add(result)
 
-            # Update and explicitly add RosteredDrivers record
+            print(f"    🛠️ Updating RosteredDrivers record...")
             user_driver.races_owned += 1
+            print(f"    📈 Races Owned now: {user_driver.races_owned}")
             user_driver.boost_points += bonus
+            print(f"    📊 Boost Points now: {user_driver.boost_points}")
             try:
                 _, _, current_value, _ = generate_driver_rating(driver)
                 user_driver.current_value = current_value
+                print(f"    💸 Updated current value: {current_value}")
             except Exception as e:
-                print(f"⚠️ Could not update value for {driver}: {e}")
+                print(f"    ⚠️ Failed to update value for {driver}: {e}")
 
-            db.session.add(user_driver)  # ✅ critical line
+            db.session.add(user_driver)
 
         user.boosts = ""
-        db.session.add(user)  # just to be safe
+        db.session.add(user)
 
-        try:
-            db.session.commit()
-        except Exception as e:
-            print(f"❌ Commit failed for user {user.username}: {e}")
-            db.session.rollback()
+    try:
+        print("💾 Committing to database...")
+        db.session.commit()
+        print("✅ Commit successful.")
+    except Exception as e:
+        print(f"❌ Commit failed: {e}")
+        db.session.rollback()
 
+    print("🏁 Finished applying boosts.")
     return "✅ Boosts applied and driver stats updated"
+
 
 
 
