@@ -7,8 +7,10 @@ from datetime import datetime
 CACHE_DIR = "/mnt/f1_cache"
 fastf1.Cache.enable_cache(CACHE_DIR)
 
+
 def is_race_cached(year, gp_name):
     return os.path.exists(os.path.join(CACHE_DIR, f"{year} - {gp_name}.csv"))
+
 
 def get_cached_race(year, gp_name):
     path = os.path.join(CACHE_DIR, f"{year} - {gp_name}.csv")
@@ -19,20 +21,11 @@ def get_cached_race(year, gp_name):
             print(f"❌ Failed to read cache: {e}")
     return pd.DataFrame()
 
+
 def get_last_processed_race():
-    latest_file = None
-    latest_time = 0
-
-    for file in os.listdir(CACHE_DIR):
-        if file.endswith(".csv") and " - " in file and not file.startswith("averages") and not file.startswith("Driver Rating"):
-            path = os.path.join(CACHE_DIR, file)
-            modified = os.path.getmtime(path)
-            if modified > latest_time:
-                latest_time = modified
-                latest_file = file
-
-    if latest_file:
-        return latest_file.replace(".csv", "")
+    last_race_info = get_most_recent_race_by_event_date()
+    if last_race_info:
+        return f"{last_race_info['year']} - {last_race_info['gp_name']}"
     return None
 
 
@@ -57,6 +50,7 @@ def fetch_and_cache_race(year, gp_name):
             on='Abbreviation'
         )
 
+        df["EventDate"] = pd.to_datetime(race.date)
         df['positions_gained'] = df['position_quali'] - df['position_race']
         df['positions_gained'] = df['positions_gained'].apply(lambda x: max(0, x))
         df['points_from_race'] = 21 - df['position_race']
@@ -83,6 +77,7 @@ def fetch_and_cache_race(year, gp_name):
         print(f"❌ Error caching {year} - {gp_name}: {e}")
         return False
 
+
 def preload_race_data_until(year_limit=2025, stop_gp="Miami Grand Prix"):
     print(f"🔁 Preloading races up to {year_limit} - {stop_gp}")
     for year in range(2021, year_limit + 1):
@@ -106,31 +101,22 @@ def preload_race_data_until(year_limit=2025, stop_gp="Miami Grand Prix"):
 
 
 def get_all_cached_drivers():
-    latest_file = None
-    latest_time = 0
-
-    for file in os.listdir(CACHE_DIR):
-        if file.endswith(".csv") and " - " in file and not file.startswith("averages") and not file.startswith("Driver Rating"):
-            path = os.path.join(CACHE_DIR, file)
-            modified = os.path.getmtime(path)
-            if modified > latest_time:
-                latest_time = modified
-                latest_file = path
-
-    if not latest_file:
+    last_race_info = get_most_recent_race_by_event_date()
+    if not last_race_info:
         print("⚠️ No valid race files found.")
         return []
 
     try:
-        df = pd.read_csv(latest_file)
+        df = pd.read_csv(last_race_info["path"])
         if "Driver" in df.columns:
             return sorted(df["Driver"].dropna().unique())
         else:
-            print(f"⚠️ 'Driver' column missing in {latest_file}")
+            print(f"⚠️ 'Driver' column missing in {last_race_info['path']}")
             return []
     except Exception as e:
         print(f"❌ Failed to load latest race file: {e}")
         return []
+
 
 def clean_gp_name(gp_name):
     if gp_name.endswith("Grand Prix Grand Prix"):
@@ -157,16 +143,12 @@ def delete_duplicate_grand_prix_files():
             original_path = os.path.join(CACHE_DIR, file)
             clean_path = os.path.join(CACHE_DIR, clean_filename)
 
-            # Case 1: Needs renaming due to duplicate 'Grand Prix'
             if raw_gp != clean_name and not os.path.exists(clean_path):
                 os.rename(original_path, clean_path)
                 renamed.append((file, clean_filename))
                 seen[clean_filename] = clean_path
-
-            # Case 2: Duplicate — delete
             elif clean_filename in seen or os.path.exists(clean_path):
                 to_delete.append(original_path)
-
             else:
                 seen[clean_filename] = original_path
 
@@ -185,3 +167,27 @@ def delete_duplicate_grand_prix_files():
 
     print(f"\n✅ Cleanup complete. {len(renamed)} renamed, {len(to_delete)} deleted.")
 
+
+def get_most_recent_race_by_event_date():
+    most_recent_date = pd.Timestamp("1900-01-01")
+    most_recent_info = None
+
+    for file in os.listdir(CACHE_DIR):
+        if file.endswith(".csv") and " - " in file and not file.startswith("averages") and not file.startswith("Driver Rating"):
+            path = os.path.join(CACHE_DIR, file)
+            try:
+                df = pd.read_csv(path)
+                if "EventDate" in df.columns:
+                    latest_in_file = pd.to_datetime(df["EventDate"].max())
+                    if latest_in_file > most_recent_date:
+                        most_recent_date = latest_in_file
+                        most_recent_info = {
+                            "path": path,
+                            "gp_name": file.replace(".csv", "").split(" - ", 1)[1],
+                            "year": file.split(" - ", 1)[0]
+                        }
+            except Exception as e:
+                print(f"⚠️ Failed to process {file}: {e}")
+                continue
+
+    return most_recent_info

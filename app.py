@@ -773,6 +773,8 @@ def logout():
     logout_user()
     return redirect("/")
 
+
+
 @app.route("/season/<driver>")
 @login_required
 def driver_season_view(driver):
