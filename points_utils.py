@@ -138,29 +138,31 @@ def generate_driver_rating(driver):
         print("⚠️ No race data found.")
         return pd.DataFrame(), None, None, None
 
-    full_df = pd.concat(all_dfs).sort_values("EventDate", ascending=False)
+    full_df = pd.concat(all_dfs).sort_values("EventDate", ascending=True)
+
+    # Ensure Scope column exists
+    if "Scope" not in full_df.columns:
+        full_df["Scope"] = None
 
     print("\n📋 All races used:")
     print(full_df[["Year", "Grand Prix", "Quali", "Race", "+Pos", "Total Points"]])
 
-    last_3 = full_df.head(3)
-    prev_3 = full_df.iloc[1:4]
+    last_3 = full_df.tail(3)
+    prev_3 = full_df.iloc[-4:-1]
 
     seasonal_avg = full_df["Total Points"].mean()
     last_3_avg = last_3["Total Points"].mean()
-    df_2025 = full_df[full_df["Year"] == 2025]
-    df_2025 = df_2025[df_2025["Scope"]]  # exclude scoped rows
 
+    # Exclude scoped rows from last race calc
+    df_2025 = full_df[(full_df["Year"] == 2025) & (full_df["Scope"].isna())]
     df_2025_sorted = df_2025.sort_values("EventDate", ascending=True)
 
     if not df_2025_sorted.empty:
         last_race = df_2025_sorted.iloc[-1]["Total Points"]
         prev_last = df_2025_sorted.iloc[-2]["Total Points"] if len(df_2025_sorted) > 1 else last_race
     else:
-        last_race = full_df.iloc[0]["Total Points"]
-        prev_last = full_df.iloc[1]["Total Points"] if len(full_df) > 1 else last_race
-
-        prev_last = full_df.iloc[1]["Total Points"] if len(full_df) > 1 else last_race
+        last_race = full_df.iloc[-1]["Total Points"]
+        prev_last = full_df.iloc[-2]["Total Points"] if len(full_df) > 1 else last_race
 
     weighted_total = round(seasonal_avg * 0.6 + last_3_avg * 0.2 + last_race * 0.2, 2)
     previous_weighted = round(seasonal_avg * 0.6 + prev_3["Total Points"].mean() * 0.2 + prev_last * 0.2, 2)
@@ -168,7 +170,6 @@ def generate_driver_rating(driver):
 
     # Add scope rows for UI rendering
     df = full_df.copy()
-    df_2025 = df[df["Year"] == 2025]
     scope_rows = []
 
     if not df_2025.empty:
@@ -195,7 +196,6 @@ def generate_driver_rating(driver):
     return df, weighted_total, fantasy_value, previous_weighted
 
 
-
 def generate_all_driver_ratings():
     drivers = get_all_cached_drivers()
     all_driver_dfs = []
@@ -214,7 +214,12 @@ def generate_all_driver_ratings():
                 print(f"❌ Skipping {driver}: 'Year' or 'EventDate' column missing.")
                 continue
 
-            df_2025 = df[(df["Year"] == 2025) & (df["Scope"])]
+            # Ensure 'Scope' column exists to avoid KeyError
+            if "Scope" not in df.columns:
+                df["Scope"] = None
+
+            # Only use real races (exclude scoped rows)
+            df_2025 = df[(df["Year"] == 2025) & (df["Scope"].isna())]
             df_2025 = df_2025.sort_values("EventDate", ascending=True)
             print(f"{driver}: {len(df_2025)} races in 2025")
 
@@ -290,6 +295,7 @@ def generate_all_driver_ratings():
         avg_df = avg_df.sort_values("Total Points", ascending=False)
         avg_df.to_csv(os.path.join(CACHE_DIR, "averages_2025.csv"), index=False)
         print("📊 Saved averages_2025.csv")
+
 
 
 
