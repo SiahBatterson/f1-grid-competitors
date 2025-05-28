@@ -169,7 +169,7 @@ def generate_driver_rating(driver):
 
     weighted_total = round(career_avg * 0.1 + seasonal_avg * 0.7 + last_3_avg * 0.2, 2)
     previous_weighted = round(career_avg * 0.1 + seasonal_avg * 0.7 + prev_3_avg * 0.2, 2)
-    fantasy_value = calculate_fantasy_value()
+    fantasy_value = calculate_fantasy_value(career_avg,seasonal_avg,last_3_avg)
 
     scope_rows = []
     if not last_3.empty:
@@ -323,7 +323,7 @@ def regenerate_driver_rating_summary():
 
             weighted_total = round(career * 0.1 + avg * 0.7 + last3 * 0.2, 2)
             previous_weighted = round(career * 0.1 + avg * 0.7 + prev3 * 0.2, 2)
-            fantasy_value = calculate_fantasy_value()
+            fantasy_value = calculate_fantasy_value(career_avg,seasonal_avg,last_3_avg)
 
             rows.append({
                 "Driver": driver,
