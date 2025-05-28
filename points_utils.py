@@ -28,13 +28,17 @@ def clean_gp_name(gp_name):
 
 def apply_boosts(df, race_name, year):
     from app import db
-    print("🔧 Starting boost application...")
-    
+    from model import RosteredDrivers, UserRaceResult, User
+    from points_utils import generate_driver_rating
+    from sqlalchemy.orm.attributes import flag_modified
+
+    print("\n\n🔧 Starting boost application...")
+
     users = User.query.all()
     print(f"👥 Loaded {len(users)} users.")
 
     for user in users:
-        print(f"📄 Processing user: {user.username} (ID: {user.id})")
+        print(f"\n📄 Processing user: {user.username} (ID: {user.id})")
 
         user_drivers = user.drivers.split(",") if user.drivers else []
         print(f"  🚗 Rostered drivers: {user_drivers}")
@@ -57,7 +61,12 @@ def apply_boosts(df, race_name, year):
                 print(f"    ⚠️ RosteredDrivers entry not found for {driver}")
                 continue
 
-            base_points = float(row["Total Points"])
+            try:
+                base_points = float(row["Total Points"].iloc[0])
+            except Exception as e:
+                print(f"    ❌ Failed to extract base points: {e}")
+                continue
+
             print(f"    🎯 Base points for {driver}: {base_points}")
 
             boost_type = user_boosts.get(driver)
@@ -66,11 +75,11 @@ def apply_boosts(df, race_name, year):
 
             try:
                 if boost_type == "qualifying":
-                    bonus = (21 - int(row["Quali"])) * 3
+                    bonus = (21 - int(row["Quali"].iloc[0])) * 3
                 elif boost_type == "race":
-                    bonus = (21 - int(row["Race"]))
+                    bonus = (21 - int(row["Race"].iloc[0]))
                 elif boost_type == "pass":
-                    bonus = int(row["+Pos"]) * 2
+                    bonus = int(row["+Pos"].iloc[0]) * 2
             except Exception as e:
                 print(f"    ❌ Failed to calculate bonus: {e}")
 
@@ -96,6 +105,7 @@ def apply_boosts(df, race_name, year):
             print(f"    📈 Races Owned now: {user_driver.races_owned}")
             user_driver.boost_points += bonus
             print(f"    📊 Boost Points now: {user_driver.boost_points}")
+
             try:
                 _, _, current_value, _ = generate_driver_rating(driver)
                 user_driver.current_value = current_value
@@ -103,21 +113,34 @@ def apply_boosts(df, race_name, year):
             except Exception as e:
                 print(f"    ⚠️ Failed to update value for {driver}: {e}")
 
+            flag_modified(user_driver, "boost_points")
             db.session.add(user_driver)
+            db.session.flush()
+            print(f"    📤 Flushed boost points to DB: {user_driver.boost_points} for {user.username} - {driver}")
+
+            # Post-commit test will go below
 
         user.boosts = ""
         db.session.add(user)
 
     try:
-        print("💾 Committing to database...")
+        print("\n💾 Committing to database...")
         db.session.commit()
         print("✅ Commit successful.")
+
+        # Check all users for latest boost points
+        for user in users:
+            for driver in user.drivers.split(",") if user.drivers else []:
+                check_driver = RosteredDrivers.query.filter_by(user_id=user.id, driver=driver).first()
+                if check_driver:
+                    print(f"🔁 Post-commit DB check: {check_driver.driver} for {user.username} - boost points: {check_driver.boost_points}")
     except Exception as e:
         print(f"❌ Commit failed: {e}")
         db.session.rollback()
 
     print("🏁 Finished applying boosts.")
     return "✅ Boosts applied and driver stats updated"
+
 
 
 
