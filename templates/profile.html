@@ -97,9 +97,7 @@
       {% set all_boosts = ['qualifying', 'race', 'pass'] %} {% set has_boosts =
       available_boosts | length > 0 %} {% for boost in all_boosts %} {% set
       is_owned = boost in available_boosts %} {% set is_active = boost ==
-      active_boost %} {% if has_boosts and not is_owned %} {% continue %} {%
-      endif %}
-
+      active_boost %} {% if not has_boosts or is_owned %}
       <div class="col">
         <div
           class="card h-100 shadow-sm border-{{ 'success' if is_active else 'primary' }}"
@@ -107,7 +105,7 @@
           <div class="card-body">
             <h5 class="card-title">
               {% if boost == 'qualifying' %}⚡ Qualifying Boost {% elif boost ==
-              'race' %}🏁 Race Boost {% else %}🚀 Pass Boost{% endif %}
+              'race' %}🏁 Race Boost {% else %}🚀 Pass Boost {% endif %}
             </h5>
 
             {% if is_active %}
@@ -130,7 +128,7 @@
           </div>
         </div>
       </div>
-      {% endfor %}
+      {% endif %} {% endfor %}
     </div>
 
     <div class="text-center mt-5">
