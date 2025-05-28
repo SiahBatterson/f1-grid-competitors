@@ -63,9 +63,9 @@
             </p>
             <p class="mb-1">
               📈 Value Gained:
-              <strong class="{{ card.delta_class }}">
-                ${{ "{:,.0f}".format(card.delta) }}
-              </strong>
+              <strong class="{{ card.delta_class }}"
+                >${{ "{:,.0f}".format(card.delta) }}</strong
+              >
             </p>
             <p class="mb-1">
               🏅 Points Gained: <strong>{{ card.boost_points }}</strong>
@@ -94,9 +94,12 @@
     <!-- 🚀 Boosts -->
     <h4 class="text-center mb-3 mt-5">🚀 Boosts</h4>
     <div class="row row-cols-1 row-cols-md-3 g-3 text-center">
-      {% set all_boosts = ['qualifying', 'race', 'pass'] %} {% for boost in
-      all_boosts %} {% set is_owned = boost in available_boosts %} {% set
-      is_active = boost == active_boost %}
+      {% set all_boosts = ['qualifying', 'race', 'pass'] %} {% set has_boosts =
+      available_boosts | length > 0 %} {% for boost in all_boosts %} {% set
+      is_owned = boost in available_boosts %} {% set is_active = boost ==
+      active_boost %} {% if has_boosts and not is_owned %} {% continue %} {%
+      endif %}
+
       <div class="col">
         <div
           class="card h-100 shadow-sm border-{{ 'success' if is_active else 'primary' }}"
@@ -104,7 +107,7 @@
           <div class="card-body">
             <h5 class="card-title">
               {% if boost == 'qualifying' %}⚡ Qualifying Boost {% elif boost ==
-              'race' %}🏁 Race Boost {% else %}🚀 Pass Boost {% endif %}
+              'race' %}🏁 Race Boost {% else %}🚀 Pass Boost{% endif %}
             </h5>
 
             {% if is_active %}
