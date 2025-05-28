@@ -147,8 +147,11 @@ def generate_driver_rating(driver):
     print("\n📋 All races used:")
     print(full_df[["Year", "Grand Prix", "Quali", "Race", "+Pos", "Total Points"]])
 
-    last_3 = full_df.tail(3)
-    prev_3 = full_df.iloc[-4:-1]
+    df_2025_real = full_df[(full_df["Year"] == 2025) & (full_df["Scope"].isna())].sort_values("EventDate", ascending=True)
+
+    last_3 = df_2025_real.tail(3)
+    prev_3 = df_2025_real.iloc[-4:-1]
+
 
     seasonal_avg = full_df["Total Points"].mean()
     last_3_avg = last_3["Total Points"].mean()
@@ -229,8 +232,11 @@ def generate_all_driver_ratings():
             # Add scope rows
             scope_rows = []
 
-            last_3 = df_2025.tail(3)
-            prev_3 = df_2025.iloc[-4:-1]
+            df_2025_real = full_df[(full_df["Year"] == 2025) & (full_df["Scope"].isna())].sort_values("EventDate", ascending=True)
+
+            last_3 = df_2025_real.tail(3)
+            prev_3 = df_2025_real.iloc[-4:-1]
+
 
             if not last_3.empty:
                 row = last_3.mean(numeric_only=True)
