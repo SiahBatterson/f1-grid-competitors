@@ -28,6 +28,7 @@ from points_utils import (
 )
 
 
+
 fastf1.Cache.enable_cache("/mnt/f1_cache")
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -174,6 +175,13 @@ def clear_driver_ratings():
         yield "</ul><a href='/'>⬅ Back</a>"
     return Response(generate(), mimetype='text/html')
 
+
+@app.route("/test_boosts", methods=["GET"])
+def test_boosts():
+    from points_utils import process_latest_race_and_apply_boosts
+    print("🚨 Calling boost processor manually from test route")
+    success, message = process_latest_race_and_apply_boosts()
+    return message
 
 @app.route("/weighted")
 def weighted():
