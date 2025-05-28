@@ -246,6 +246,10 @@ def generate_all_driver_ratings():
                 row["Year"] = 2025
                 scope_rows.append(row)
 
+            real_races = df[df["Scope"].isna()].sort_values("EventDate", ascending=True)
+            career_avg = real_races["Total Points"].mean() if not real_races.empty else None
+
+
             season_row = df_2025.mean(numeric_only=True)
             season_row["Scope"] = "Seasonal Average"
             season_row["Driver"] = driver
