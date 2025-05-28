@@ -117,28 +117,6 @@
           {% endfor %}
         </div>
       </div>
-
-      <!-- Actions -->
-      <div class="section text-center">
-        <form
-          method="POST"
-          action="{{ url_for('clear_driver_ratings') }}"
-          class="d-inline me-3"
-        >
-          <button type="submit" class="btn btn-danger">
-            🗑️ Clear All Driver Ratings
-          </button>
-        </form>
-        <form
-          method="POST"
-          action="{{ url_for('generate_all_driver_ratings_route') }}"
-          class="d-inline"
-        >
-          <button type="submit" class="btn btn-dark">
-            🛠️ Generate All Driver Ratings
-          </button>
-        </form>
-      </div>
     </div>
   </body>
 </html>

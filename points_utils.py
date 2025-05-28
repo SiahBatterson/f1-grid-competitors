@@ -31,7 +31,7 @@ def apply_boosts(df, race_name, year):
     users = User.query.all()
     
     for user in users:
-        user_drivers = user.drivers.split(",")
+        user_drivers = user.drivers.split(",") if user.drivers else []
         user_boosts = {
             b.split(":")[0]: b.split(":")[1]
             for b in user.boosts.split(";") if ":" in b
@@ -42,10 +42,8 @@ def apply_boosts(df, race_name, year):
             if row.empty:
                 continue
 
-            # Skip if driver is not rostered for this user
             user_driver = RosteredDrivers.query.filter_by(user_id=user.id, driver=driver).first()
             if not user_driver:
-                print(f"⚠️ Skipping boost for {driver} - not rostered by user {user.username}")
                 continue
 
             base_points = float(row["Total Points"])
@@ -62,7 +60,7 @@ def apply_boosts(df, race_name, year):
             total = base_points + bonus
             boosted = bool(boost_type)
 
-            # Save the race result
+            # Save result
             result = UserRaceResult(
                 user_id=user.id,
                 driver=driver,
@@ -75,18 +73,26 @@ def apply_boosts(df, race_name, year):
             )
             db.session.add(result)
 
-            # Update RosteredDrivers DB entry
+            # Update rostered driver
             user_driver.races_owned += 1
             user_driver.boost_points += bonus
             try:
                 _, _, current_value, _ = generate_driver_rating(driver)
                 user_driver.current_value = current_value
             except Exception as e:
-                print(f"⚠️ Failed to update value for {driver}: {e}")
+                print(f"⚠️ Could not update value for {driver}: {e}")
 
-    user.boosts = ""
-    db.session.commit()
-    return "✅ Boosts applied and driver stats updated"
+        # Clear user boosts AFTER all drivers
+        user.boosts = ""
+
+        try:
+            db.session.commit()
+        except Exception as e:
+            print(f"❌ Failed to commit for user {user.username}: {e}")
+            db.session.rollback()
+
+    return "✅ Boosts applied and stats updated"
+
 
 def process_latest_race_and_apply_boosts():
     from core_utils import get_most_recent_race_by_event_date
