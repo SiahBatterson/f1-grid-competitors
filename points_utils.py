@@ -146,6 +146,7 @@ def apply_boosts(df, race_name, year):
 
 
 def process_latest_race_and_apply_boosts():
+    print("📞 ENTERED process_latest_race_and_apply_boosts()")
     from core_utils import get_most_recent_race_by_event_date
     from fastf1 import get_event_schedule
 
