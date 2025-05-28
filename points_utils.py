@@ -44,6 +44,7 @@ def apply_boosts(df, race_name, year):
 
             user_driver = RosteredDrivers.query.filter_by(user_id=user.id, driver=driver).first()
             if not user_driver:
+                print(f"⚠️ {user.username} has no rostered entry for {driver}")
                 continue
 
             base_points = float(row["Total Points"])
@@ -60,7 +61,7 @@ def apply_boosts(df, race_name, year):
             total = base_points + bonus
             boosted = bool(boost_type)
 
-            # Save result
+            # Save the race result
             result = UserRaceResult(
                 user_id=user.id,
                 driver=driver,
@@ -73,7 +74,7 @@ def apply_boosts(df, race_name, year):
             )
             db.session.add(result)
 
-            # Update rostered driver
+            # Update and explicitly add RosteredDrivers record
             user_driver.races_owned += 1
             user_driver.boost_points += bonus
             try:
@@ -82,16 +83,19 @@ def apply_boosts(df, race_name, year):
             except Exception as e:
                 print(f"⚠️ Could not update value for {driver}: {e}")
 
-        # Clear user boosts AFTER all drivers
+            db.session.add(user_driver)  # ✅ critical line
+
         user.boosts = ""
+        db.session.add(user)  # just to be safe
 
         try:
             db.session.commit()
         except Exception as e:
-            print(f"❌ Failed to commit for user {user.username}: {e}")
+            print(f"❌ Commit failed for user {user.username}: {e}")
             db.session.rollback()
 
-    return "✅ Boosts applied and stats updated"
+    return "✅ Boosts applied and driver stats updated"
+
 
 
 def process_latest_race_and_apply_boosts():
