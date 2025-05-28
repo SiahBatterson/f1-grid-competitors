@@ -17,6 +17,7 @@
   </head>
   <body class="container py-5">
     <h1 class="mb-4 text-center">👤 {{ user.username }}'s Profile</h1>
+
     {% if active_boost %}
     <div class="text-center mb-4">
       <span class="badge bg-success fs-5">
@@ -107,8 +108,8 @@
         >
           <div class="card-body">
             <h5 class="card-title">
-              {% if boost == 'qualifying' %}⚡ Qualifying Boost{% elif boost ==
-              'race' %}🏁 Race Boost{% else %}🚀 Pass Boost{% endif %}
+              {% if boost == 'qualifying' %}⚡ Qualifying Boost {% elif boost ==
+              'race' %}🏁 Race Boost {% else %}🚀 Pass Boost {% endif %}
             </h5>
 
             {% if active_boost == boost %}
@@ -126,7 +127,7 @@
           </div>
         </div>
       </div>
-      {% endif %} {% endfor %}
+      {% endfor %}
     </div>
 
     <div class="text-center mt-5">
