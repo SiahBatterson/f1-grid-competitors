@@ -125,6 +125,12 @@ def process_single_race_and_apply_boosts(driver_code, year, gp_name):
 
     return points
 
+
+def calculate_fantasy_value(career_avg, season_avg, last3_avg):
+    if career_avg is None or season_avg is None or last3_avg is None:
+        return None
+    return round((career_avg * 0.05 + season_avg * 0.85 + last3_avg * 0.1) * 250000)
+
 def generate_driver_rating(driver):
     print(f"\n🔍 Generating driver rating for: {driver}")
     all_dfs = []
@@ -152,18 +158,18 @@ def generate_driver_rating(driver):
     full_df["Scope"] = None
 
     df_2025 = full_df[(full_df["Year"] == 2025) & (full_df["Scope"].isna())]
+    df_2025 = df_2025.sort_values("EventDate", ascending=True)
     last_3 = df_2025.tail(3)
-    prev_3 = df_2025.iloc[-4:-1]
+    prev_3 = df_2025.iloc[-4:-1] if len(df_2025) >= 4 else last_3
 
     seasonal_avg = df_2025["Total Points"].mean()
     career_avg = full_df["Total Points"].mean()
     last_3_avg = last_3["Total Points"].mean()
-    prev_last = df_2025.iloc[-2]["Total Points"] if len(df_2025) > 1 else last_3_avg
-    last_race = df_2025.iloc[-1]["Total Points"] if not df_2025.empty else last_3_avg
+    prev_3_avg = prev_3["Total Points"].mean()
 
     weighted_total = round(career_avg * 0.1 + seasonal_avg * 0.7 + last_3_avg * 0.2, 2)
-    previous_weighted = round(career_avg * 0.1 + seasonal_avg * 0.7 + prev_3["Total Points"].mean() * 0.2, 2)
-    fantasy_value = round(((seasonal_avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
+    previous_weighted = round(career_avg * 0.1 + seasonal_avg * 0.7 + prev_3_avg * 0.2, 2)
+    fantasy_value = calculate_fantasy_value()
 
     scope_rows = []
     if not last_3.empty:
@@ -317,7 +323,7 @@ def regenerate_driver_rating_summary():
 
             weighted_total = round(career * 0.1 + avg * 0.7 + last3 * 0.2, 2)
             previous_weighted = round(career * 0.1 + avg * 0.7 + prev3 * 0.2, 2)
-            fantasy_value = round(((avg * 0.9) + (weighted_total * 0.1)) * 250000, 2)
+            fantasy_value = calculate_fantasy_value()
 
             rows.append({
                 "Driver": driver,
