@@ -219,17 +219,20 @@ def generate_all_driver_ratings():
                 row = last_3.mean(numeric_only=True)
                 row["Scope"] = "Last 3 Races Avg"
                 row["Driver"] = driver
+                row["Year"] = 2025
                 scope_rows.append(row)
 
             if not prev_3.empty:
                 row = prev_3.mean(numeric_only=True)
                 row["Scope"] = "Prev 3 Races Avg"
                 row["Driver"] = driver
+                row["Year"] = 2025
                 scope_rows.append(row)
 
             season_row = df_2025.mean(numeric_only=True)
             season_row["Scope"] = "Seasonal Average"
             season_row["Driver"] = driver
+            season_row["Year"] = 2025
             scope_rows.append(season_row)
 
             if scope_rows:
@@ -249,8 +252,8 @@ def generate_all_driver_ratings():
             else:
                 print(f"⚠️ Skipping summary for {driver}: NaN in stats.")
 
-            # For leaderboard CSV
-            all_driver_dfs.append(df_2025)
+            # For leaderboard CSV (includes scoped rows)
+            all_driver_dfs.append(df[df["Year"] == 2025].copy())
 
             print(f"✅ Generated: {driver}")
 
@@ -275,6 +278,7 @@ def generate_all_driver_ratings():
         avg_df = avg_df.sort_values("Total Points", ascending=False)
         avg_df.to_csv(os.path.join(CACHE_DIR, "averages_2025.csv"), index=False)
         print("📊 Saved averages_2025.csv")
+
 
 
 
