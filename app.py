@@ -111,7 +111,8 @@ def home():
     }
 
     last_race_used = "Miami 2025"
-
+    print("✅ Drivers:", drivers)
+    print("✅ Top Drivers:", top_drivers)
     return render_template(
         "home.html",
         drivers=drivers,
