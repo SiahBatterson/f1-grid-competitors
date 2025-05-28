@@ -148,8 +148,19 @@ def generate_driver_rating(driver):
 
     seasonal_avg = full_df["Total Points"].mean()
     last_3_avg = last_3["Total Points"].mean()
-    last_race = full_df.iloc[0]["Total Points"]
-    prev_last = full_df.iloc[1]["Total Points"] if len(full_df) > 1 else last_race
+    df_2025 = full_df[full_df["Year"] == 2025]
+    df_2025 = df_2025[df_2025["Scope"].isna()]  # exclude scoped rows
+
+    df_2025_sorted = df_2025.sort_values("EventDate", ascending=True)
+
+    if not df_2025_sorted.empty:
+        last_race = df_2025_sorted.iloc[-1]["Total Points"]
+        prev_last = df_2025_sorted.iloc[-2]["Total Points"] if len(df_2025_sorted) > 1 else last_race
+    else:
+        last_race = full_df.iloc[0]["Total Points"]
+        prev_last = full_df.iloc[1]["Total Points"] if len(full_df) > 1 else last_race
+
+        prev_last = full_df.iloc[1]["Total Points"] if len(full_df) > 1 else last_race
 
     weighted_total = round(seasonal_avg * 0.6 + last_3_avg * 0.2 + last_race * 0.2, 2)
     previous_weighted = round(seasonal_avg * 0.6 + prev_3["Total Points"].mean() * 0.2 + prev_last * 0.2, 2)
@@ -199,11 +210,12 @@ def generate_all_driver_ratings():
 
             df = df.copy()
 
-            if "Year" not in df.columns:
-                print(f"❌ Skipping {driver}: 'Year' column missing from dataframe.")
+            if "Year" not in df.columns or "EventDate" not in df.columns:
+                print(f"❌ Skipping {driver}: 'Year' or 'EventDate' column missing.")
                 continue
 
-            df_2025 = df[df["Year"] == 2025]
+            df_2025 = df[(df["Year"] == 2025) & (df["Scope"].isna())]
+            df_2025 = df_2025.sort_values("EventDate", ascending=True)
             print(f"{driver}: {len(df_2025)} races in 2025")
 
             if df_2025.empty:
@@ -212,8 +224,8 @@ def generate_all_driver_ratings():
             # Add scope rows
             scope_rows = []
 
-            last_3 = df_2025.head(3)
-            prev_3 = df_2025.iloc[1:4]
+            last_3 = df_2025.tail(3)
+            prev_3 = df_2025.iloc[-4:-1]
 
             if not last_3.empty:
                 row = last_3.mean(numeric_only=True)
