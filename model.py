@@ -34,3 +34,22 @@ class RosteredDrivers(db.Model):
     races_owned = db.Column(db.Integer, default=0)
     boost_points = db.Column(db.Float, default=0)
     current_value = db.Column(db.Float, default=0)
+
+
+class Pet(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    food = db.Column(db.Float, default=100.0)
+    water = db.Column(db.Float, default=100.0)
+    fun = db.Column(db.Float, default=100.0)
+    xp = db.Column(db.Integer, default=0)
+    level = db.Column(db.Integer, default=1)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "food": self.food,
+            "water": self.water,
+            "fun": self.fun,
+            "xp": self.xp,
+            "level": self.level,
+        }
