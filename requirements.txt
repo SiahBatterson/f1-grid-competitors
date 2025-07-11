@@ -4,3 +4,4 @@ flask-sqlalchemy
 werkzeug
 fastf1
 pandas
+flask_cors
