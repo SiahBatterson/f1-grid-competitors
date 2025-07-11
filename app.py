@@ -40,6 +40,14 @@ login_manager.login_view = 'login'
 from flask_cors import CORS
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
+@app.after_request
+def add_cors_headers(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET,OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
+
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -134,6 +142,43 @@ def home():
         driver_points=driver_points
     )
 
+@app.route("/scrape/top-driver")
+def scrape_top_driver():
+    drivers = get_all_cached_drivers()
+    top_driver = None
+    top_points = None
+
+    for d in drivers:
+        try:
+            path = os.path.join(CACHE_DIR, f"Driver Rating - {d}.csv")
+            if not os.path.exists(path):
+                continue
+            df = pd.read_csv(path)
+            last_3 = df[df["Scope"] == "Last 3 Races Avg"]
+            last_3_avg = last_3["Total Points"].values[0] if not last_3.empty else None
+            if last_3_avg is not None:
+                if not top_driver or last_3_avg > top_points:
+                    top_driver = d
+                    top_points = last_3_avg
+        except:
+            continue
+
+    if top_driver:
+        # Visual HTML for scraping OR for testing in a browser
+        return (
+            f"<div id='top-driver'>"
+            f"<span class='driver'>{top_driver}</span>"
+            f" <span class='points'>{round(top_points, 2)}</span>"
+            f"</div>",
+            200,
+            {"Content-Type": "text/html; charset=utf-8"}
+        )
+    else:
+        return (
+            "<div id='top-driver'><span class='driver'>Not found</span> <span class='points'>0</span></div>",
+            200,
+            {"Content-Type": "text/html; charset=utf-8"}
+        )
 
 
 @app.route("/admin/reset_user/<int:user_id>", methods=["POST"])
