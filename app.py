@@ -178,8 +178,10 @@ def api_top_driver():
             continue
 
     if top_driver:
-        # Replace with driver_name_map if you want the full name
-        return {"driver": top_driver, "points": round(top_points, 2)}
+        from flask import jsonify
+
+        return jsonify(driver=top_driver, points=round(top_points, 2))
+
     else:
         return {"driver": None, "points": None}
 
