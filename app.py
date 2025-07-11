@@ -153,6 +153,33 @@ def reset_user(user_id):
 
     return redirect("/admin/users")
 
+@app.route("/api/top-driver")
+def api_top_driver():
+    drivers = get_all_cached_drivers()
+    top_driver = None
+    top_points = None
+
+    for d in drivers:
+        try:
+            path = os.path.join(CACHE_DIR, f"Driver Rating - {d}.csv")
+            if not os.path.exists(path):
+                continue
+            df = pd.read_csv(path)
+            last_3 = df[df["Scope"] == "Last 3 Races Avg"]
+            last_3_avg = last_3["Total Points"].values[0] if not last_3.empty else None
+            if last_3_avg is not None:
+                if not top_driver or last_3_avg > top_points:
+                    top_driver = d
+                    top_points = last_3_avg
+        except:
+            continue
+
+    if top_driver:
+        # Replace with driver_name_map if you want the full name
+        return {"driver": top_driver, "points": round(top_points, 2)}
+    else:
+        return {"driver": None, "points": None}
+
 
 @app.route("/generate_all_driver_ratings", methods=["GET", "POST"])
 def generate_all_driver_ratings_route():
