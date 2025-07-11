@@ -160,25 +160,18 @@ def scrape_top_driver():
                 if not top_driver or last_3_avg > top_points:
                     top_driver = d
                     top_points = last_3_avg
-        except:
+        except Exception:
             continue
 
     if top_driver:
-        # Visual HTML for scraping OR for testing in a browser
-        return (
-            f"<div id='top-driver'>"
-            f"<span class='driver'>{top_driver}</span>"
-            f" <span class='points'>{round(top_points, 2)}</span>"
-            f"</div>",
-            200,
-            {"Content-Type": "text/html; charset=utf-8"}
-        )
+        # You can make this markup as simple as you want
+        html = f"""
+        <span class="driver">{top_driver}</span>
+        <span class="points">{round(top_points, 2)}</span>
+        """
+        return html
     else:
-        return (
-            "<div id='top-driver'><span class='driver'>Not found</span> <span class='points'>0</span></div>",
-            200,
-            {"Content-Type": "text/html; charset=utf-8"}
-        )
+        return "<span class='driver'>N/A</span><span class='points'>N/A</span>"
 
 
 @app.route("/admin/reset_user/<int:user_id>", methods=["POST"])
