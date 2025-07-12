@@ -40,6 +40,46 @@ login_manager.login_view = 'login'
 from flask_cors import CORS
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
+# Mapping of driver abbreviations to full names
+DRIVER_NAME_MAP = {
+    "VER": "Max Verstappen",
+    "TSU": "Yuki Tsunoda",
+    "LEC": "Charles Leclerc",
+    "HAM": "Lewis Hamilton",
+    "RUS": "George Russell",
+    "ANT": "Andrea Kimi Antonelli",
+    "NOR": "Lando Norris",
+    "PIA": "Oscar Piastri",
+    "ALO": "Fernando Alonso",
+    "STR": "Lance Stroll",
+    "GAS": "Pierre Gasly",
+    "COL": "Franco Colapinto",
+    "OCO": "Esteban Ocon",
+    "BEA": "Oliver Bearman",
+    "ALB": "Alex Albon",
+    "SAI": "Carlos Sainz",
+    "HUL": "Nico Hülkenberg",
+    "BOR": "Gabriel Bortoleto",
+    "HAD": "Isack Hadjar",
+    "LAW": "Liam Lawson",
+    "DOO": "Jack Doohan",
+}
+
+
+def normalize_points(values_dict):
+    """Return a new dict scaled between 1-100 for numeric values."""
+    numeric = [v for v in values_dict.values() if isinstance(v, (int, float))]
+    if not numeric:
+        return {k: "N/A" for k in values_dict}
+    min_v, max_v = min(numeric), max(numeric)
+    if max_v == min_v:
+        return {k: 100 if isinstance(v, (int, float)) else "N/A" for k, v in values_dict.items()}
+    scale = 99 / (max_v - min_v)
+    return {
+        k: round(1 + (v - min_v) * scale, 2) if isinstance(v, (int, float)) else "N/A"
+        for k, v in values_dict.items()
+    }
+
 @app.after_request
 def add_cors_headers(response):
     response.headers["Access-Control-Allow-Origin"] = "*"
@@ -59,9 +99,10 @@ CACHE_DIR = "/mnt/f1_cache"
 @app.route("/")
 def home():
     drivers = get_all_cached_drivers()
-    top_drivers = []
+
     driver_values = {}
-    driver_points = {}
+    driver_points_raw = {}
+    driver_last3_raw = {}
 
     for d in drivers:
         try:
@@ -87,45 +128,25 @@ def home():
                 fantasy_value = None
 
             driver_values[d] = f"${fantasy_value:,.0f}" if fantasy_value else "N/A"
-            driver_points[d] = round(last_points, 2) if last_points else "N/A"
-
+            if last_points is not None:
+                driver_points_raw[d] = round(last_points, 2)
             if last_3_avg is not None:
-                top_drivers.append({
-                    "driver": d,
-                    "points": round(last_3_avg, 2),
-                    "value": f"${fantasy_value:,.0f}" if fantasy_value else "N/A"
-                })
+                driver_last3_raw[d] = last_3_avg
 
         except Exception as e:
             print(f"⚠️ {d}: {e}")
             driver_values[d] = "N/A"
-            driver_points[d] = "N/A"
 
-    top_drivers = sorted(top_drivers, key=lambda x: x["points"], reverse=True)[:3]
+    # Normalize points
+    driver_points = normalize_points(driver_points_raw)
+    last3_norm = normalize_points(driver_last3_raw)
 
-    driver_name_map = {
-        "VER": "Max Verstappen",
-        "TSU": "Yuki Tsunoda",
-        "LEC": "Charles Leclerc",
-        "HAM": "Lewis Hamilton",
-        "RUS": "George Russell",
-        "ANT": "Andrea Kimi Antonelli",
-        "NOR": "Lando Norris",
-        "PIA": "Oscar Piastri",
-        "ALO": "Fernando Alonso",
-        "STR": "Lance Stroll",
-        "GAS": "Pierre Gasly",
-        "COL": "Franco Colapinto",
-        "OCO": "Esteban Ocon",
-        "BEA": "Oliver Bearman",
-        "ALB": "Alex Albon",
-        "SAI": "Carlos Sainz",
-        "HUL": "Nico Hülkenberg",
-        "BOR": "Gabriel Bortoleto",
-        "HAD": "Isack Hadjar",
-        "LAW": "Liam Lawson",
-        "DOO": "Jack Doohan"
-    }
+    # Build top driver list sorted by raw last 3-race average
+    top_sorted = sorted(driver_last3_raw.items(), key=lambda x: x[1], reverse=True)[:3]
+    top_drivers = [
+        {"driver": drv, "points": last3_norm[drv], "value": driver_values.get(drv, "N/A")}
+        for drv, _ in top_sorted
+    ]
 
     last_race_used = get_last_processed_race() or "Unknown"
 
@@ -136,7 +157,7 @@ def home():
         "home.html",
         drivers=drivers,
         top_drivers=top_drivers,
-        driver_name_map=driver_name_map,
+        driver_name_map=DRIVER_NAME_MAP,
         last_race_used=last_race_used,
         driver_values=driver_values,
         driver_points=driver_points
@@ -147,6 +168,7 @@ def scrape_top_driver():
     drivers = get_all_cached_drivers()
     top_driver = None
     top_points = None
+    driver_last3 = {}
 
     for d in drivers:
         try:
@@ -157,6 +179,7 @@ def scrape_top_driver():
             last_3 = df[df["Scope"] == "Last 3 Races Avg"]
             last_3_avg = last_3["Total Points"].values[0] if not last_3.empty else None
             if last_3_avg is not None:
+                driver_last3[d] = last_3_avg
                 if not top_driver or last_3_avg > top_points:
                     top_driver = d
                     top_points = last_3_avg
@@ -164,10 +187,11 @@ def scrape_top_driver():
             continue
 
     if top_driver:
-        # You can make this markup as simple as you want
+        norm_map = normalize_points(driver_last3)
+        norm_points = norm_map.get(top_driver, "N/A")
         html = f"""
-        <span class="driver">{top_driver}</span>
-        <span class="points">{round(top_points, 2)}</span>
+        <span class="driver">{DRIVER_NAME_MAP.get(top_driver, top_driver)}</span>
+        <span class="points">{norm_points}</span>
         """
         return html
     else:
